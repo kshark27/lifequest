@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">LifeRPG</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Example strings for templates -->
+    <string name="level_ex">Level 1</string>
+    <string name="xp_ex">XP: 500/1000</string>
+    <string name="gold_ex">Gold: 200</string>
+</resources>
