@@ -6,7 +6,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,41 +19,40 @@ import java.util.List;
  * Activities containing this fragment MUST implement the {@link OnListFragmentInteractionListener}
  * interface.
  */
-public class QuestFragment extends Fragment {
+public class RewardFragment extends Fragment {
 
+    // TODO: Customize parameters
     private int mColumnCount = 1;
+    List<Reward> rewards;
 
     private MainActivity mListener;
-    private List<Quest> quests;
-    MyQuestRecyclerViewAdapter adapter;
+    MyRewardRecyclerViewAdapter adapter;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public QuestFragment() {
-        quests = new ArrayList<>();
-        adapter = new MyQuestRecyclerViewAdapter(quests, mListener);
-
+    public RewardFragment() {
+        adapter = new MyRewardRecyclerViewAdapter(rewards, mListener);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        quests = new ArrayList<>();
-//        Quest q1 = new Quest("Get an A on your test", Quest.HARD_DIFFICULTY, 100, 50);
-//        Quest q2 = new Quest("Go for a jog", Quest.MEDIUM_DIFFICULTY, 50, 25);
-//        Quest q3 = new Quest("Floss", Quest.EASY_DIFFICULTY, 20, 5);
-//        quests.add(q1);
-//        quests.add(q2);
-//        quests.add(q3);
 
-        adapter = new MyQuestRecyclerViewAdapter(quests, mListener);
+        rewards = new ArrayList<>();
+//        Reward r1 = new Reward("Get Dark Souls 3", 100);
+//        Reward r2 = new Reward("Pack of beer", 50);
+//        rewards.add(r1);
+//        rewards.add(r2);
+
+        adapter = new MyRewardRecyclerViewAdapter(rewards, mListener);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_quest_list, container, false);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_reward_list, container, false);
 
         // Set the adapter
         if (view instanceof RecyclerView) {
@@ -70,10 +68,9 @@ public class QuestFragment extends Fragment {
         return view;
     }
 
-    public void addQuest(Quest q) {
-        adapter.addItem(q);
+    public void addReward(Reward r) {
+        adapter.addItem(r);
     }
-
 
     @Override
     public void onAttach(Context context) {
@@ -103,6 +100,7 @@ public class QuestFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnListFragmentInteractionListener {
-        void onListFragmentInteraction(Quest item);
+        // TODO: Update argument type and name
+        void onListFragmentInteraction(Reward item);
     }
 }

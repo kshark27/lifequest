@@ -6,4 +6,15 @@
     <string name="level_ex">Level 1</string>
     <string name="xp_ex">XP: 500/1000</string>
     <string name="gold_ex">Gold: 200</string>
+
+    <!-- AddQuestActivity -->
+    <string name="new_quest">New Quest</string>
+    <string name="description">Description</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="value">How much gold is this worth?</string>
+    <string name="submit_button">Done</string>
+
+    <!-- AddRewardActivity -->
+    <string name="new_reward">New Reward</string>
+    <string name="cost">Cost</string>
 </resources>

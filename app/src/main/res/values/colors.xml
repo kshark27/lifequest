@@ -2,5 +2,11 @@
 <resources>
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#00BCD4</color>
+
+    <!-- Quest colors based on difficulty -->
+    <color name="easyColor">#99ff99</color>
+    <color name="mediumColor">#ffff99</color>
+    <color name="hardColor">#81ff4848</color>
+    <color name="legendaryColor">#9999ff</color>
 </resources>

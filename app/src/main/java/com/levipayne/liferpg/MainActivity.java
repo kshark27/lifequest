@@ -1,5 +1,6 @@
 package com.levipayne.liferpg;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,15 +12,22 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.levipayne.liferpg.dummy.DummyContent;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements QuestFragment.OnListFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements QuestFragment.OnListFragmentInteractionListener, RewardFragment.OnListFragmentInteractionListener {
 
-    static final int NUM_ITEMS = 1;
+    static final int NUM_ITEMS = 2;
+    private final int QUEST_REQUEST_CODE = 1;
+    private final int REWARD_REQUEST_CODE = 2;
+    private int mCurrentTabPos;
+    private View mFab;
+    private QuestFragment mQuestFrag;
+    private RewardFragment mRewardFrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +35,8 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mCurrentTabPos = 0;
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Quests"));
@@ -40,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                mCurrentTabPos = tab.getPosition();
                 viewPager.setCurrentItem(tab.getPosition());
             }
 
@@ -51,6 +62,35 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
 
+            }
+        });
+
+        FragmentManager fm = getSupportFragmentManager();
+        List<Fragment> fragments = fm.getFragments();
+        if (fragments != null) {
+            for (Fragment f : fragments) {
+                if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
+                else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
+            }
+        }
+
+        // FAB
+        mFab = findViewById(R.id.addFAB);
+        mFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent;
+                switch (mCurrentTabPos) {
+                    case 0:
+                        intent = new Intent(MainActivity.this, AddQuestActivity.class);
+                        startActivityForResult(intent, QUEST_REQUEST_CODE);
+                        break;
+                    case 1:
+                        intent = new Intent(MainActivity.this, AddRewardActivity.class);
+                        startActivityForResult(intent, REWARD_REQUEST_CODE);
+                        break;
+                    default:
+                }
             }
         });
     }
@@ -82,6 +122,45 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
 
     }
 
+    @Override
+    public void onListFragmentInteraction(Reward item) {
+
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == QUEST_REQUEST_CODE) {
+            if(resultCode == RESULT_OK){
+                Quest quest = (Quest) data.getSerializableExtra("quest");
+                if (mQuestFrag == null) {
+                    FragmentManager fm = getSupportFragmentManager();
+                    List<Fragment> fragments = fm.getFragments();
+                    if (fragments != null) {
+                        for (Fragment f : fragments) {
+                            if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
+                            else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
+                        }
+                    }
+                }
+                mQuestFrag.addQuest(quest);
+            }
+        }
+        else if (requestCode == REWARD_REQUEST_CODE && resultCode == RESULT_OK) {
+            Reward reward = (Reward) data.getSerializableExtra("reward");
+            if (mRewardFrag == null) {
+                FragmentManager fm = getSupportFragmentManager();
+                List<Fragment> fragments = fm.getFragments();
+                if (fragments != null) {
+                    for (Fragment f : fragments) {
+                        if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
+                        else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
+                    }
+                }
+            }
+            mRewardFrag.addReward(reward);
+        }
+    }
+
     public static class PagerAdapter extends FragmentPagerAdapter {
         public PagerAdapter(FragmentManager fm) {
             super(fm);
@@ -98,9 +177,9 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
                 case 0:
                     QuestFragment tab1 = new QuestFragment();
                     return tab1;
-//                case 1:
-//                    RewardFragment tab2 = new RewardFragment();
-//                    return tab2;
+                case 1:
+                    RewardFragment tab2 = new RewardFragment();
+                    return tab2;
                 default:
                     return null;
             }

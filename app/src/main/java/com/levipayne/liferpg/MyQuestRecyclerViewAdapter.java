@@ -1,17 +1,16 @@
 package com.levipayne.liferpg;
 
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.levipayne.liferpg.dummy.DummyContent.DummyItem;
-
 import java.util.List;
 
 /**
- * {@link RecyclerView.Adapter} that can display a {@link DummyItem} and makes a call to the
+ * {@link RecyclerView.Adapter} that can display a {@link} and makes a call to the
  * specified {@link MainActivity}.
  */
 public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecyclerViewAdapter.ViewHolder> {
@@ -36,7 +35,24 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
         holder.mQuest = mValues.get(position);
         holder.mDescriptionView.setText(mValues.get(position).description);
         holder.mDifficultyView.setText(mValues.get(position).difficulty);
-        holder.mGoldView.setText(String.valueOf(mValues.get(position).gold));
+        holder.mGoldView.setText(String.valueOf(mValues.get(position).cost));
+
+        switch (mValues.get(position).difficulty) {
+            case Quest.EASY_DIFFICULTY:
+                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.easyColor));
+                break;
+            case Quest.MEDIUM_DIFFICULTY:
+                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.mediumColor));
+                break;
+            case Quest.HARD_DIFFICULTY:
+                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.hardColor));
+                break;
+            case Quest.LEGENDARY_DIFFICULTY:
+                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.legendaryColor));
+                break;
+            default:
+                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.easyColor));
+        }
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -48,6 +64,11 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
                 }
             }
         });
+    }
+
+    public void addItem(Quest q) {
+        mValues.add(q);
+        this.notifyDataSetChanged();
     }
 
     @Override
