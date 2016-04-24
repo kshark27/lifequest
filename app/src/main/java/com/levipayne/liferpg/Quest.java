@@ -13,13 +13,13 @@ public class Quest implements Serializable {
 
     String description;
     String difficulty;
-    int cost;
+    int reward;
     int xp;
 
-    public Quest(String description, String difficulty, int cost, int xp) {
+    public Quest(String description, String difficulty, int reward, int xp) {
         this.description = description;
         this.difficulty = difficulty;
-        this.cost = cost;
+        this.reward = reward;
         this.xp = xp;
     }
 }

@@ -19,7 +19,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".AddQuestActivity" />
-        <activity android:name=".AddRewardActivity"></activity>
+        <activity android:name=".AddRewardActivity" />
+        <activity android:name=".QuestDetailsActivity"></activity>
     </application>
 
 </manifest>

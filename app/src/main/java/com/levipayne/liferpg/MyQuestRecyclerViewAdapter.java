@@ -35,7 +35,7 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
         holder.mQuest = mValues.get(position);
         holder.mDescriptionView.setText(mValues.get(position).description);
         holder.mDifficultyView.setText(mValues.get(position).difficulty);
-        holder.mGoldView.setText(String.valueOf(mValues.get(position).cost));
+        holder.mGoldView.setText(String.valueOf(mValues.get(position).reward));
 
         switch (mValues.get(position).difficulty) {
             case Quest.EASY_DIFFICULTY:

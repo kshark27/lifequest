@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
     static final int NUM_ITEMS = 2;
     private final int QUEST_REQUEST_CODE = 1;
     private final int REWARD_REQUEST_CODE = 2;
+    private final int QUEST_DETAIL_CODE = 3;
     private int mCurrentTabPos;
     private View mFab;
     private QuestFragment mQuestFrag;
@@ -119,7 +120,9 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
 
     @Override
     public void onListFragmentInteraction(Quest item) {
-
+        Intent intent = new Intent(this, QuestDetailsActivity.class);
+        intent.putExtra("quest", item);
+        startActivityForResult(intent,QUEST_DETAIL_CODE);
     }
 
     @Override

@@ -17,4 +17,10 @@
     <!-- AddRewardActivity -->
     <string name="new_reward">New Reward</string>
     <string name="cost">Cost</string>
+
+    <!-- QuestDetailsActivity -->
+    <string name="quest">Quest</string>
+    <string name="reward">Reward</string>
+    <string name="complete">Complete</string>
+    <string name="edit">Edit</string>
 </resources>
