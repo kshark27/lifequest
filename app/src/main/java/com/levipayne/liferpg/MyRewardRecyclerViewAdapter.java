@@ -6,7 +6,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.firebase.client.AuthData;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@link RecyclerView.Adapter} that can display a {@link Reward} and makes a call to the
@@ -17,10 +26,35 @@ public class MyRewardRecyclerViewAdapter extends RecyclerView.Adapter<MyRewardRe
 
     private final List<Reward> mValues;
     private final MainActivity mListener;
+    private final Firebase mFirebaseRef;
 
     public MyRewardRecyclerViewAdapter(List<Reward> items, MainActivity listener) {
-        mValues = items;
+        mValues = new ArrayList<>();
         mListener = listener;
+
+        mFirebaseRef = new Firebase("https://rpgoflife.firebaseio.com/users");
+        AuthData authData = mFirebaseRef.getAuth();
+        Firebase questsRef = mFirebaseRef.child(authData.getUid()).child("rewards");
+        questsRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                Map<String,Object> rewardMap = (Map<String,Object>) snapshot.getValue();
+                List<Reward> rewards = new ArrayList<>();
+                for (String key : rewardMap.keySet()) {
+                    HashMap<String,Object> rewardVals = (HashMap<String,Object>)rewardMap.get(key);
+                    String description = (String)rewardVals.get("description");
+                    int cost = (int)((long) rewardVals.get("cost"));
+                    Reward reward = new Reward(description, cost);
+                    rewards.add(reward);
+                }
+                MyRewardRecyclerViewAdapter.this.mValues.clear();
+                MyRewardRecyclerViewAdapter.this.mValues.addAll(rewards);
+            }
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+                System.out.println("The read failed: " + firebaseError.getMessage());
+            }
+        });
     }
 
     @Override

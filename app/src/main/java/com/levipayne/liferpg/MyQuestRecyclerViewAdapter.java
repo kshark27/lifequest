@@ -2,12 +2,22 @@ package com.levipayne.liferpg;
 
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.firebase.client.AuthData;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@link RecyclerView.Adapter} that can display a {@link} and makes a call to the
@@ -15,12 +25,41 @@ import java.util.List;
  */
 public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecyclerViewAdapter.ViewHolder> {
 
+    final String TAG = MyQuestRecyclerViewAdapter.class.getSimpleName();
+
     private final List<Quest> mValues;
     private final MainActivity mListener;
+    private final Firebase mFirebaseRef;
 
     public MyQuestRecyclerViewAdapter(List<Quest> items, MainActivity listener) {
         mValues = items;
         mListener = listener;
+
+        mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url) + "/users");
+        AuthData authData = mFirebaseRef.getAuth();
+        Firebase questsRef = mFirebaseRef.child(authData.getUid()).child("quests");
+        questsRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                Map<String,Object> questMap = (Map<String,Object>) snapshot.getValue();
+                List<Quest> quests = new ArrayList<Quest>();
+                for (String key : questMap.keySet()) {
+                    HashMap<String,Object> questVals = (HashMap<String,Object>)questMap.get(key);
+                    String description = (String)questVals.get("description");
+                    String difficulty = (String)questVals.get("difficulty");
+                    int reward = (int)((long) questVals.get("reward"));
+                    int xp = (int)((long) questVals.get("xp"));
+                    Quest quest = new Quest(description,difficulty,reward,xp);
+                    quests.add(quest);
+                }
+                MyQuestRecyclerViewAdapter.this.mValues.clear();
+                MyQuestRecyclerViewAdapter.this.mValues.addAll(quests);
+            }
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+                System.out.println("The read failed: " + firebaseError.getMessage());
+            }
+        });
     }
 
     @Override

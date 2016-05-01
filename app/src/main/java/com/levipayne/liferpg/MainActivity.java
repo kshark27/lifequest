@@ -162,6 +162,9 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
             }
             mRewardFrag.addReward(reward);
         }
+        else if (requestCode == QUEST_DETAIL_CODE && resultCode == RESULT_OK) {
+
+        }
     }
 
     public static class PagerAdapter extends FragmentPagerAdapter {

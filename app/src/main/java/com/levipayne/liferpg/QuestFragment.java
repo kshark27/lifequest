@@ -11,8 +11,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.firebase.client.AuthData;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
+import com.firebase.client.ValueEventListener;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A fragment representing a list of Items.
@@ -22,32 +31,28 @@ import java.util.List;
  */
 public class QuestFragment extends Fragment {
 
+    private final String TAG = QuestFragment.class.getSimpleName();
+
     private int mColumnCount = 1;
 
     private MainActivity mListener;
     private List<Quest> quests;
     MyQuestRecyclerViewAdapter adapter;
+    private Firebase mFirebaseRef;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
     public QuestFragment() {
-        quests = new ArrayList<>();
-        adapter = new MyQuestRecyclerViewAdapter(quests, mListener);
 
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         quests = new ArrayList<>();
-//        Quest q1 = new Quest("Get an A on your test", Quest.HARD_DIFFICULTY, 100, 50);
-//        Quest q2 = new Quest("Go for a jog", Quest.MEDIUM_DIFFICULTY, 50, 25);
-//        Quest q3 = new Quest("Floss", Quest.EASY_DIFFICULTY, 20, 5);
-//        quests.add(q1);
-//        quests.add(q2);
-//        quests.add(q3);
 
         adapter = new MyQuestRecyclerViewAdapter(quests, mListener);
     }

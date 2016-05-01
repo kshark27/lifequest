@@ -9,12 +9,16 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.AuthData;
+import com.firebase.client.Firebase;
+
 public class AddQuestActivity extends AppCompatActivity {
 
     // Form elements
     private TextView mDescriptionView;
     private Spinner mDifficultySpinner;
     private TextView mCostView;
+    private Firebase mFirebaseRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +34,8 @@ public class AddQuestActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, difficulties);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDifficultySpinner.setAdapter(adapter);
+
+        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
     }
 
     public void submit(View view) {
@@ -59,6 +65,11 @@ public class AddQuestActivity extends AppCompatActivity {
                     xp = 10;
             }
             Quest quest = new Quest(description, difficulty, cost, xp);
+
+            // Save quest
+            AuthData authData = mFirebaseRef.getAuth();
+            mFirebaseRef.child("users").child(authData.getUid()).child("quests").push().setValue(quest);
+
             Intent intent = new Intent();
             intent.putExtra("quest", quest);
             setResult(RESULT_OK, intent);

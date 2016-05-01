@@ -9,11 +9,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.AuthData;
+import com.firebase.client.Firebase;
+
 public class AddRewardActivity extends AppCompatActivity {
 
     // Form elements
     private TextView mDescriptionView;
     private TextView mCostView;
+    private Firebase mFirebaseRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +26,8 @@ public class AddRewardActivity extends AppCompatActivity {
 
         mDescriptionView = (TextView) findViewById(R.id.description);
         mCostView = (TextView) findViewById(R.id.cost);
+
+        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
     }
 
     public void submit(View view) {
@@ -32,6 +38,11 @@ public class AddRewardActivity extends AppCompatActivity {
             String description = mDescriptionView.getText().toString();
             int cost = Integer.valueOf(mCostView.getText().toString());
             Reward reward = new Reward(description, cost);
+
+            // Save reward
+            AuthData authData = mFirebaseRef.getAuth();
+            mFirebaseRef.child("users").child(authData.getUid()).child("rewards").push().setValue(reward);
+            
             Intent intent = new Intent();
             intent.putExtra("reward", reward);
             setResult(RESULT_OK, intent);

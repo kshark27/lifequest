@@ -102,5 +102,9 @@ public class QuestDetailsActivity extends AppCompatActivity {
         descriptionText.setText(mQuest.description);
         difficultyText.setText(mQuest.difficulty);
         rewardText.setText(String.valueOf(mQuest.reward));
+
+        Intent intent = new Intent();
+        intent.putExtra("alteredQuest", mQuest);
+        setResult(RESULT_OK, intent);
     }
 }
