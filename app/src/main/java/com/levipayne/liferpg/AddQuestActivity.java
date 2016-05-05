@@ -34,8 +34,6 @@ public class AddQuestActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, difficulties);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDifficultySpinner.setAdapter(adapter);
-
-        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
     }
 
     public void submit(View view) {
@@ -67,8 +65,11 @@ public class AddQuestActivity extends AppCompatActivity {
             Quest quest = new Quest(description, difficulty, cost, xp);
 
             // Save quest
-            AuthData authData = mFirebaseRef.getAuth();
-            mFirebaseRef.child("users").child(authData.getUid()).child("quests").push().setValue(quest);
+            mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
+            Firebase newRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("quests").push();
+            String id = newRef.getKey();
+            quest.id = id;
+            newRef.setValue(quest);
 
             Intent intent = new Intent();
             intent.putExtra("quest", quest);

@@ -13,7 +13,7 @@
         android:text="Get an A on the exam" />
 
     <TextView
-        android:id="@+id/difficulty"
+        android:id="@+id/cost"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceListItem"
@@ -28,7 +28,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceListItem"
         android:text="50"
-        android:layout_alignTop="@+id/difficulty"
+        android:layout_alignTop="@+id/cost"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:layout_marginLeft="20dp"

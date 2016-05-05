@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AutoCompleteTextView;
@@ -40,7 +41,7 @@ public class LoginActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = LoginActivity.class.getSimpleName();
 
     // UI references.
     private AutoCompleteTextView mEmailView;
@@ -100,9 +101,11 @@ public class LoginActivity extends AppCompatActivity implements
         mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
 
         AuthData authData = mFirebaseRef.getAuth();
-        if (authData != null) {
+        if (authData != null && authData.getAuth() != null) {
+            Log.d(TAG, "id: " + authData.getUid());
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
+            finish();
         }
     }
 
@@ -130,6 +133,11 @@ public class LoginActivity extends AppCompatActivity implements
         mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(AuthData authData) {
+                // Init player stats
+                mFirebaseRef.child("users").child(authData.getUid()).child("level").setValue(1);
+                mFirebaseRef.child("users").child(authData.getUid()).child("xp").setValue(0);
+                mFirebaseRef.child("users").child(authData.getUid()).child("gold").setValue(0);
+
                 Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);

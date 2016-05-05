@@ -11,6 +11,7 @@ public class Quest implements Serializable {
     public static final String HARD_DIFFICULTY = "HARD";
     public static final String LEGENDARY_DIFFICULTY = "LEGENDARY";
 
+    public String id;
     public String description;
     public String difficulty;
     public int reward;
@@ -39,5 +40,9 @@ public class Quest implements Serializable {
 
     public int getXp() {
         return this.xp;
+    }
+
+    public String getId() {
+        return id;
     }
 }

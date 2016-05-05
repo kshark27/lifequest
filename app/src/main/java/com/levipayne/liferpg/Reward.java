@@ -7,8 +7,11 @@ import java.io.Serializable;
  */
 public class Reward implements Serializable {
 
+    public String id;
     public String description;
     public int cost;
+
+    public Reward() {}
 
     public Reward(String description, int cost) {
         this.description = description;
@@ -29,5 +32,9 @@ public class Reward implements Serializable {
 
     public void setCost(int cost) {
         this.cost = cost;
+    }
+
+    public String getId() {
+        return id;
     }
 }

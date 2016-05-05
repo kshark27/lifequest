@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.firebase.client.AuthData;
+import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
@@ -35,29 +36,75 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
         mValues = items;
         mListener = listener;
 
-        mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url) + "/users");
+        mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url));
         AuthData authData = mFirebaseRef.getAuth();
-        Firebase questsRef = mFirebaseRef.child(authData.getUid()).child("quests");
-        questsRef.addValueEventListener(new ValueEventListener() {
+        String uId = authData.getUid();
+        Firebase questsRef = mFirebaseRef.child("users").child(uId).child("quests");
+//        questsRef.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot snapshot) {
+//                Map<String, Object> questMap = (Map<String, Object>) snapshot.getValue();
+//                List<Quest> quests = new ArrayList<Quest>();
+//                for (String key : questMap.keySet()) {
+//                    HashMap<String, Object> questVals = (HashMap<String, Object>) questMap.get(key);
+//                    String description = (String) questVals.get("description");
+//                    String difficulty = (String) questVals.get("difficulty");
+//                    int reward = (int) ((long) questVals.get("reward"));
+//                    int xp = (int) ((long) questVals.get("xp"));
+//                    Quest quest = new Quest(description, difficulty, reward, xp);
+//                    quest.id = key;
+//                    quests.add(quest);
+//                }
+//                MyQuestRecyclerViewAdapter.this.mValues.clear();
+//                MyQuestRecyclerViewAdapter.this.mValues.addAll(quests);
+//                notifyDataSetChanged();
+//            }
+//            @Override
+//            public void onCancelled(FirebaseError firebaseError) {
+//                Log.d(TAG, "The read failed: " + firebaseError.getMessage());
+//            }
+//        });
+
+        questsRef.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                Map<String,Object> questMap = (Map<String,Object>) snapshot.getValue();
-                List<Quest> quests = new ArrayList<Quest>();
-                for (String key : questMap.keySet()) {
-                    HashMap<String,Object> questVals = (HashMap<String,Object>)questMap.get(key);
-                    String description = (String)questVals.get("description");
-                    String difficulty = (String)questVals.get("difficulty");
-                    int reward = (int)((long) questVals.get("reward"));
-                    int xp = (int)((long) questVals.get("xp"));
-                    Quest quest = new Quest(description,difficulty,reward,xp);
-                    quests.add(quest);
-                }
-                MyQuestRecyclerViewAdapter.this.mValues.clear();
-                MyQuestRecyclerViewAdapter.this.mValues.addAll(quests);
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                Quest quest = dataSnapshot.getValue(Quest.class);
+                mValues.add(quest);
+                notifyDataSetChanged();
             }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                Quest quest = dataSnapshot.getValue(Quest.class);
+                int index = -1;
+                for (int i = 0; i < mValues.size(); i++) {
+                    if (mValues.get(i).id.equals(quest.id)) index = i;
+                }
+                if (index != -1) {
+                    mValues.remove(index);
+                    mValues.add(index, quest);
+                    notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                Quest quest = dataSnapshot.getValue(Quest.class);
+                int index = -1;
+                for (int i = 0; i < mValues.size(); i++) {
+                    if (mValues.get(i).id.equals(quest.id)) index = i;
+                }
+                if (index != -1) mValues.remove(index);
+                notifyDataSetChanged();
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+            }
+
             @Override
             public void onCancelled(FirebaseError firebaseError) {
-                System.out.println("The read failed: " + firebaseError.getMessage());
+                Log.d(TAG, firebaseError.toString());
             }
         });
     }
@@ -126,7 +173,7 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
             super(view);
             mView = view;
             mDescriptionView = (TextView) view.findViewById(R.id.description);
-            mDifficultyView = (TextView) view.findViewById(R.id.difficulty);
+            mDifficultyView = (TextView) view.findViewById(R.id.cost);
             mGoldView = (TextView) view.findViewById(R.id.g);
         }
 

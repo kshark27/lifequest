@@ -2,11 +2,8 @@ package com.levipayne.liferpg;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -16,19 +13,35 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import com.firebase.client.AuthData;
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
 
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements QuestFragment.OnListFragmentInteractionListener, RewardFragment.OnListFragmentInteractionListener {
+    final String TAG = MainActivity.class.getSimpleName();
 
     static final int NUM_ITEMS = 2;
     private final int QUEST_REQUEST_CODE = 1;
     private final int REWARD_REQUEST_CODE = 2;
     private final int QUEST_DETAIL_CODE = 3;
+    private final int REWARD_DETAIL_CODE = 4;
     private int mCurrentTabPos;
     private View mFab;
     private QuestFragment mQuestFrag;
     private RewardFragment mRewardFrag;
+
+    // UI References
+    private TextView mLevelText;
+    private TextView mXpText;
+    private TextView mGoldText;
+    private ProgressBar mXpBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +50,63 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // UI Reference Instantiation
+        mLevelText = (TextView) findViewById(R.id.level);
+        mXpText = (TextView) findViewById(R.id.xp);
+        mGoldText = (TextView) findViewById(R.id.gold);
+        mXpBar = (ProgressBar) findViewById(R.id.xp_bar);
+
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url) + "/users");
+        AuthData authData = ref.getAuth();
+        Log.d(TAG, "id: " + authData.getUid());
+        Firebase userRef = ref.child(authData.getUid());
+
+        // Load stats into views
+        userRef.child("level").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot != null) {
+                    mLevelText.setText(dataSnapshot.getValue().toString());
+                }
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+        userRef.child("xp").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot != null) {
+                    mXpText.setText(dataSnapshot.getValue().toString() + " / 100");
+                    mXpBar.setMax(100); // TODO: make this scale per level later
+                    mXpBar.setProgress(Integer.valueOf(dataSnapshot.getValue().toString()));
+                }
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+        userRef.child("gold").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot != null) {
+                    mGoldText.setText(dataSnapshot.getValue().toString());
+                }
+            }
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
+
         mCurrentTabPos = 0;
 
+        // Set up Reward and Quest Fragments
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Quests"));
         tabLayout.addTab(tabLayout.newTab().setText("Rewards"));
@@ -114,8 +182,19 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         if (id == R.id.action_settings) {
             return true;
         }
+        if (id == R.id.action_logout) {
+            logout();
+        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void logout() {
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+        ref.unauth();
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     @Override
@@ -127,44 +206,46 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
 
     @Override
     public void onListFragmentInteraction(Reward item) {
-
+        Intent intent = new Intent(this, RewardDetailsActivity.class);
+        intent.putExtra("reward", item);
+        startActivityForResult(intent, REWARD_DETAIL_CODE);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == QUEST_REQUEST_CODE) {
-            if(resultCode == RESULT_OK){
-                Quest quest = (Quest) data.getSerializableExtra("quest");
-                if (mQuestFrag == null) {
-                    FragmentManager fm = getSupportFragmentManager();
-                    List<Fragment> fragments = fm.getFragments();
-                    if (fragments != null) {
-                        for (Fragment f : fragments) {
-                            if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
-                            else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
-                        }
-                    }
-                }
-                mQuestFrag.addQuest(quest);
-            }
-        }
-        else if (requestCode == REWARD_REQUEST_CODE && resultCode == RESULT_OK) {
-            Reward reward = (Reward) data.getSerializableExtra("reward");
-            if (mRewardFrag == null) {
-                FragmentManager fm = getSupportFragmentManager();
-                List<Fragment> fragments = fm.getFragments();
-                if (fragments != null) {
-                    for (Fragment f : fragments) {
-                        if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
-                        else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
-                    }
-                }
-            }
-            mRewardFrag.addReward(reward);
-        }
-        else if (requestCode == QUEST_DETAIL_CODE && resultCode == RESULT_OK) {
-
-        }
+//        if (requestCode == QUEST_REQUEST_CODE) {
+//            if(resultCode == RESULT_OK){
+//                Quest quest = (Quest) data.getSerializableExtra("quest");
+//                if (mQuestFrag == null) {
+//                    FragmentManager fm = getSupportFragmentManager();
+//                    List<Fragment> fragments = fm.getFragments();
+//                    if (fragments != null) {
+//                        for (Fragment f : fragments) {
+//                            if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
+//                            else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
+//                        }
+//                    }
+//                }
+//                mQuestFrag.addQuest(quest);
+//            }
+//        }
+//        else if (requestCode == REWARD_REQUEST_CODE && resultCode == RESULT_OK) {
+//            Reward reward = (Reward) data.getSerializableExtra("reward");
+//            if (mRewardFrag == null) {
+//                FragmentManager fm = getSupportFragmentManager();
+//                List<Fragment> fragments = fm.getFragments();
+//                if (fragments != null) {
+//                    for (Fragment f : fragments) {
+//                        if (f instanceof QuestFragment) mQuestFrag = (QuestFragment) f;
+//                        else if (f instanceof RewardFragment) mRewardFrag = (RewardFragment) f;
+//                    }
+//                }
+//            }
+//            mRewardFrag.addReward(reward);
+//        }
+//        else if (requestCode == QUEST_DETAIL_CODE && resultCode == RESULT_OK) {
+//
+//        }
     }
 
     public static class PagerAdapter extends FragmentPagerAdapter {

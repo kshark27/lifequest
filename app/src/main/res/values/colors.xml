@@ -9,4 +9,8 @@
     <color name="mediumColor">#ffff99</color>
     <color name="hardColor">#81ff4848</color>
     <color name="legendaryColor">#9999ff</color>
+
+    <!-- QuestDetailsActivity -->
+    <color name="delete_fab_color">#ff0000</color>
+    <color name="edit_fab_color">#e4d318</color>
 </resources>

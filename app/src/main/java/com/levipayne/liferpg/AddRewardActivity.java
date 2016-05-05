@@ -4,8 +4,6 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,7 +39,10 @@ public class AddRewardActivity extends AppCompatActivity {
 
             // Save reward
             AuthData authData = mFirebaseRef.getAuth();
-            mFirebaseRef.child("users").child(authData.getUid()).child("rewards").push().setValue(reward);
+            Firebase newRef = mFirebaseRef.child("users").child(authData.getUid()).child("rewards").push();
+            String id = newRef.getKey();
+            reward.id = id;
+            newRef.setValue(reward);
             
             Intent intent = new Intent();
             intent.putExtra("reward", reward);

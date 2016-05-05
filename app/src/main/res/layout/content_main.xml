@@ -25,22 +25,37 @@
             android:layout_height="wrap_content"
             android:id="@+id/level_container">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="@string/level_ex"
-                android:id="@+id/textView"
-                android:layout_centerHorizontal="true"
-                android:paddingBottom="10dp"
-                android:gravity="center_horizontal"
-                android:textAlignment="center" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/level_ex"
+                    android:id="@+id/textView"
+                    android:layout_centerHorizontal="true"
+                    android:paddingBottom="10dp"
+                    android:gravity="center_horizontal"
+                    android:textAlignment="center"
+                    android:layout_marginRight="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/level_1"
+                    android:id="@+id/level" />
+            </LinearLayout>
 
             <ProgressBar
                 style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/progressBar"
+                android:id="@+id/xp_bar"
                 android:max="100"
                 android:progress="50"
                 android:layout_below="@+id/textView"
@@ -48,21 +63,52 @@
                 android:progressTint="#3f66e7"
                 android:paddingBottom="10dp" />
 
-            <TextView
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="@string/xp_ex"
-                android:id="@+id/textView4"
-                android:textAlignment="center" />
+                android:layout_gravity="center_horizontal">
 
-            <TextView
-                android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/xp_ex"
+                    android:id="@+id/textView4"
+                    android:textAlignment="center"
+                    android:layout_marginRight="5dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/xp_500"
+                    android:id="@+id/xp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="@string/gold_ex"
-                android:id="@+id/textView5"
-                android:textAlignment="center" />
+                android:layout_gravity="center_horizontal">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/gold_ex"
+                    android:id="@+id/textView5"
+                    android:textAlignment="center"
+                    android:layout_marginRight="5dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="@string/gold_200"
+                    android:id="@+id/gold" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
@@ -75,7 +121,7 @@
                 android:orientation="vertical"
                 android:layout_width="178dp"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/progressBar">
+                android:layout_below="@+id/xp_bar">
 
             </LinearLayout>
 
