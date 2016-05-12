@@ -6,31 +6,41 @@ import java.io.Serializable;
  * Created by Levi on 4/14/2016.
  */
 public class Quest implements Serializable {
-    public static final String EASY_DIFFICULTY = "EASY";
-    public static final String MEDIUM_DIFFICULTY = "MEDIUM";
-    public static final String HARD_DIFFICULTY = "HARD";
-    public static final String LEGENDARY_DIFFICULTY = "LEGENDARY";
+
+    public static final int MAX_DIFFICULTY = 10;
 
     public String id;
     public String description;
-    public String difficulty;
+    public int difficulty;
     public int reward;
     public int xp;
+    public String dueDate;
 
     public Quest() {}
 
-    public Quest(String description, String difficulty, int reward, int xp) {
+    public Quest(String description, int difficulty, int reward, int xp) {
         this.description = description;
         this.difficulty = difficulty;
         this.reward = reward;
         this.xp = xp;
     }
 
+    /**
+     * Calculates amount of xp earned for completing a quest based on difficulty and player level
+     * @param level Player's level
+     * @param difficulty Difficulty of quest (1-10)
+     * @return XP that should be earned for completing the quest
+     */
+    public static int calculateXpFromDifficulty(int level, int difficulty) {
+        int x = level + difficulty - 1;
+        return (int) (x * Math.log((double)x) * 5 + 5);
+    }
+
     public String getDescription() {
         return this.description;
     }
 
-    public String getDifficulty() {
+    public int getDifficulty() {
         return this.difficulty;
     }
 
@@ -44,5 +54,9 @@ public class Quest implements Serializable {
 
     public String getId() {
         return id;
+    }
+
+    public String getDueDate() {
+        return dueDate;
     }
 }

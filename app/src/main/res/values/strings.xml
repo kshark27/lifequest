@@ -15,24 +15,33 @@
     <string name="gold_200">200</string>
 
     <!-- AddQuestActivity -->
+    <string name="activity_add_quest_label">New Quest</string>
     <string name="new_quest">New Quest</string>
     <string name="description">Description</string>
     <string name="difficulty">Difficulty</string>
-    <string name="value">How much gold is this worth?</string>
+    <string name="reward_text">Reward</string>
     <string name="submit_button">Done</string>
+    <string name="date_button">Select Date</string>
 
     <!-- AddRewardActivity -->
+    <string name="activity_add_reward_label">New Reward</string>
     <string name="new_reward">New Reward</string>
     <string name="cost">Cost</string>
 
     <!-- QuestDetailsActivity -->
+    <string name="activity_quest_details_label">Quest Details</string>
     <string name="quest">Quest</string>
     <string name="reward">Reward</string>
     <string name="complete">Complete</string>
     <string name="edit">Edit</string>
     <string name="title_activity_login">Sign in</string>
+    <string name="fail">Fail</string>
+    <string name="due_date">Due Date</string>
+    <string name="done_button">Done</string>
 
     <!-- RewardDetailsActivity -->
+    <string name="activity_reward_details_label">Reward Details</string>
+    <string name="purchase">Purchase</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
@@ -47,4 +56,9 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+
+    <array name="drawer_items">
+        <item name="past_quests">Quest History</item>
+        <item name="past_rewards">Reward History</item>
+    </array>
 </resources>

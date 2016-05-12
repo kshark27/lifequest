@@ -12,12 +12,9 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * {@link RecyclerView.Adapter} that can display a {@link Reward} and makes a call to the
@@ -152,7 +149,7 @@ public class MyRewardRecyclerViewAdapter extends RecyclerView.Adapter<MyRewardRe
             super(view);
             mView = view;
             mDescriptionView = (TextView) view.findViewById(R.id.description);
-            mCostView = (TextView) view.findViewById(R.id.cost);
+            mCostView = (TextView) view.findViewById(R.id.difficulty);
         }
 
         @Override

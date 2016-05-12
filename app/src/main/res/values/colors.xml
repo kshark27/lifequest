@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#00BCD4</color>
+    <color name="colorPrimary">#3f51b5</color>
+    <color name="colorPrimaryDark">#303f9f</color>
+    <color name="colorAccent">#00bcd4</color>
 
     <!-- Quest colors based on difficulty -->
     <color name="easyColor">#99ff99</color>
@@ -11,6 +11,18 @@
     <color name="legendaryColor">#9999ff</color>
 
     <!-- QuestDetailsActivity -->
-    <color name="delete_fab_color">#ff0000</color>
+    <color name="delete_fab_color">#b80000</color>
     <color name="edit_fab_color">#e4d318</color>
+
+    <!-- Quest Colors -->
+    <color name="quest_background">#FAFAFA</color>
+
+    <!-- Reward Colors -->
+    <color name="reward_background">#FAFAFA</color>
+    <color name="buttonColor">#6cd7e5</color>
+    <color name="complete_button">#71b352</color>
+    <color name="fail_button">#bb5050</color>
+    <color name="select_date">#636fb4</color>
+    <color name="purchase_button">#71b352</color>
+    <color name="main_background">#FAFAFA</color>
 </resources>

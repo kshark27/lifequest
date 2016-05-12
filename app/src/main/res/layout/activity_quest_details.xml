@@ -8,30 +8,19 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.levipayne.liferpg.QuestDetailsActivity">
+    tools:context="com.levipayne.liferpg.QuestDetailsActivity"
+    android:background="@color/quest_background">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/quest"
-            android:id="@+id/textView8"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:textAlignment="center"
-            android:layout_gravity="center_horizontal" />
-
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/description_container"
-            android:layout_marginTop="15dp">
+            android:id="@+id/description_container">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -39,7 +28,9 @@
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="@string/description"
                 android:id="@+id/textView9"
-                android:textColor="@color/primary_text_default_material_light" />
+                android:textColor="@color/primary_text_default_material_light"
+                android:layout_marginBottom="5dp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -62,14 +53,33 @@
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="@string/difficulty"
                 android:id="@+id/textView10"
-                android:textColor="@color/primary_text_default_material_light" />
+                android:textColor="@color/primary_text_default_material_light"
+                android:layout_marginBottom="5dp"
+                android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Medium Text"
-                android:id="@+id/cost" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/inner_difficulty_container">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageView10"
+                    android:src="@drawable/skull"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginRight="10dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Medium Text"
+                    android:id="@+id/difficulty"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <LinearLayout
@@ -77,7 +87,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/reward_container"
-            android:layout_marginTop="15dp">
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -85,14 +96,109 @@
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="@string/reward"
                 android:id="@+id/textView12"
-                android:textColor="@color/primary_text_default_material_light" />
+                android:textColor="@color/primary_text_default_material_light"
+                android:layout_marginBottom="5dp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/static_inner_reward_container">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageView11"
+                    android:src="@drawable/coin"
+                    android:layout_marginRight="10dp"
+                    android:layout_gravity="center_vertical" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Medium Text"
+                    android:id="@+id/reward"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/inner_reward_container"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageView9"
+                    android:src="@drawable/coin"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginRight="10dp" />
+
+                <EditText
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/reward_edit"
+                    style="@style/EditTextStyle"
+                    android:textAlignment="center" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/date_container">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
-                android:text="Medium Text"
-                android:id="@+id/reward" />
+                android:id="@+id/textView4"
+                android:textColor="@color/primary_text_default_material_light"
+                android:text="@string/due_date"
+                android:layout_marginBottom="5dp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/inner_date_container">
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageView13"
+                    android:layout_marginRight="10dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/clock" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/date_button"
+                    android:id="@+id/date_button"
+                    android:layout_marginRight="10dp"
+                    android:backgroundTint="@color/select_date"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    android:layout_gravity="center_vertical" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:id="@+id/due_date_text"
+                    android:text="example text"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>
@@ -112,7 +218,26 @@
             android:id="@+id/complete_button"
             android:layout_alignParentBottom="true"
             android:layout_gravity="center_horizontal"
-            android:layout_centerHorizontal="true" />
+            android:layout_centerHorizontal="true"
+            android:backgroundTint="@color/complete_button"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/fail"
+            android:id="@+id/fail_button"
+            android:backgroundTint="@color/fail_button"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/done_button"
+            android:id="@+id/done_button"
+            android:backgroundTint="@color/colorPrimary"
+            android:textColor="#FFFFFF"
+            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -139,7 +264,7 @@
         android:layout_gravity="right"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_marginBottom="5dp"
+        android:layout_marginBottom="50dp"
         android:layout_marginRight="5dp"
         app:backgroundTint="@color/delete_fab_color" />
 

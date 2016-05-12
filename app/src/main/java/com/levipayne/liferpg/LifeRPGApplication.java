@@ -1,6 +1,8 @@
 package com.levipayne.liferpg;
 
 import android.app.Application;
+import android.content.Context;
+import android.support.multidex.MultiDex;
 
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
@@ -14,7 +16,12 @@ public class LifeRPGApplication extends Application {
     public void onCreate() {
         super.onCreate();
         Firebase.setAndroidContext(this);
-        Firebase.getDefaultConfig().setPersistenceEnabled(true);
+//        Firebase.getDefaultConfig().setPersistenceEnabled(true);
     }
 
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
+    }
 }

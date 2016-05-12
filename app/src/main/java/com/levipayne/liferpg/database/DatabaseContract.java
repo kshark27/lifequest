@@ -1,4 +1,4 @@
-package com.levipayne.liferpg.com.levipayne.liferpg.database;
+package com.levipayne.liferpg.database;
 
 import android.provider.BaseColumns;
 

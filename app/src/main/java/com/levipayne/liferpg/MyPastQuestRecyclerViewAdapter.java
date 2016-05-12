@@ -13,7 +13,6 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
 
 import java.text.ParseException;
@@ -22,25 +21,25 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * {@link RecyclerView.Adapter} that can display a {@link} and makes a call to the
- * specified {@link MainActivity}.
+ * Created by Levi on 5/12/2016.
  */
-public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecyclerViewAdapter.ViewHolder> {
-
-    final String TAG = MyQuestRecyclerViewAdapter.class.getSimpleName();
+public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQuestRecyclerViewAdapter.ViewHolder> {
+    final String TAG = MyPastQuestRecyclerViewAdapter.class.getSimpleName();
 
     private final List<Quest> mValues;
     private final MainActivity mListener;
     private final Firebase mFirebaseRef;
 
-    public MyQuestRecyclerViewAdapter(List<Quest> items, MainActivity listener) {
+    public MyPastQuestRecyclerViewAdapter(List<Quest> items, MainActivity listener, boolean complete) {
         mValues = items;
         mListener = listener;
 
         mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url));
         AuthData authData = mFirebaseRef.getAuth();
         String uId = authData.getUid();
-        Firebase questsRef = mFirebaseRef.child("users").child(uId).child("quests");
+        Firebase questsRef = mFirebaseRef.child("users").child(uId).child("past_quests");
+        if (complete) questsRef = questsRef.child("complete");
+        else questsRef = questsRef.child("failed");
 
         questsRef.addChildEventListener(new ChildEventListener() {
             @Override
@@ -137,23 +136,6 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
             holder.mDateContainer.setVisibility(View.VISIBLE);
             ((TextView)holder.mDateContainer.findViewById(R.id.date_text)).setText(mValues.get(position).dueDate);
         }
-
-//        switch (mValues.get(position).difficulty) {
-//            case Quest.EASY_DIFFICULTY:
-//                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.easyColor));
-//                break;
-//            case Quest.MEDIUM_DIFFICULTY:
-//                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.mediumColor));
-//                break;
-//            case Quest.HARD_DIFFICULTY:
-//                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.hardColor));
-//                break;
-//            case Quest.LEGENDARY_DIFFICULTY:
-//                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.legendaryColor));
-//                break;
-//            default:
-//                holder.mView.setBackgroundColor(ContextCompat.getColor(mListener.getApplicationContext(), R.color.easyColor));
-//        }
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override

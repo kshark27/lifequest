@@ -23,7 +23,7 @@ public class AddRewardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_reward);
 
         mDescriptionView = (TextView) findViewById(R.id.description);
-        mCostView = (TextView) findViewById(R.id.cost);
+        mCostView = (TextView) findViewById(R.id.difficulty);
 
         mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
     }

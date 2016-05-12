@@ -1,38 +1,60 @@
 package com.levipayne.liferpg;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.InputType;
+import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.events.Event;
+import com.levipayne.liferpg.events.EventDispatcher;
+import com.levipayne.liferpg.events.IEventDispatcher;
+import com.levipayne.liferpg.events.IEventListener;
+import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
 
-public class QuestDetailsActivity extends AppCompatActivity {
+public class QuestDetailsActivity extends AppCompatActivity implements DatePickerDialogFragment.DatePickerDialogListener, IEventDispatcher {
+
+    private final String TAG = getClass().getSimpleName();
 
     private Quest mQuest;
+
     private LinearLayout descriptionLayout;
     private LinearLayout difficultyLayout;
     private LinearLayout rewardLayout;
     private LinearLayout buttonLayout;
+    private LinearLayout dateLayout;
+
     private TextView descriptionText;
-    private TextView difficultyText;
-    private TextView rewardText;
+    private LinearLayout difficultyStaticContent;
+    private LinearLayout rewardStaticContent;
+    private TextView dateText;
+
     private EditText descriptionEdit;
-    private Spinner difficultySpinner;
     private EditText rewardEdit;
+
+    private View difficultySlider;
+
     private FloatingActionButton editFab;
     private FloatingActionButton deleteFab;
+
     private Button completeButton;
     private Button doneButton;
+    private Button failButton;
+    private Button dateButton;
+
+    private EventDispatcher mEventDispatcher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +62,10 @@ public class QuestDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_quest_details);
 
         Intent intent = this.getIntent();
+
         mQuest = (Quest) intent.getSerializableExtra("quest");
         ((TextView)findViewById(R.id.description)).setText(mQuest.description);
-        ((TextView)findViewById(R.id.cost)).setText(mQuest.difficulty);
+        ((TextView)findViewById(R.id.difficulty)).setText(String.valueOf(mQuest.difficulty));
         ((TextView)findViewById(R.id.reward)).setText(String.valueOf(mQuest.reward));
 
         editFab = (FloatingActionButton) findViewById(R.id.edit_fab);
@@ -61,21 +84,126 @@ public class QuestDetailsActivity extends AppCompatActivity {
             }
         });
 
+        completeButton = (Button) findViewById(R.id.complete_button);
+        completeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                complete();
+            }
+        });
+
+        failButton = (Button) findViewById(R.id.fail_button);
+        failButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fail();
+            }
+        });
+
         descriptionLayout = (LinearLayout) findViewById(R.id.description_container);
         descriptionText = (TextView) findViewById(R.id.description);
+
         difficultyLayout = (LinearLayout) findViewById(R.id.difficulty_container);
-        difficultyText = (TextView) findViewById(R.id.cost);
-        rewardLayout = (LinearLayout) findViewById(R.id.reward_container);
-        rewardText = (TextView) findViewById(R.id.reward);
+        difficultyStaticContent = (LinearLayout) findViewById(R.id.inner_difficulty_container);
+
+        rewardLayout = (LinearLayout) findViewById(R.id.inner_reward_container);
+        rewardStaticContent = (LinearLayout) findViewById(R.id.static_inner_reward_container);
+        rewardEdit = (EditText) findViewById(R.id.reward_edit);
+
+        doneButton = (Button) findViewById(R.id.done_button);
+        dateButton = (Button) findViewById(R.id.date_button);
+
+        dateLayout = (LinearLayout) findViewById(R.id.inner_date_container);
+        dateText = (TextView) findViewById(R.id.due_date_text);
+        if (mQuest.dueDate != null) dateText.setText(mQuest.dueDate);
+        else dateText.setText("Not set");
+
         completeButton = (Button) findViewById(R.id.complete_button);
         buttonLayout = (LinearLayout) findViewById(R.id.button_container);
+
+        mEventDispatcher = new EventDispatcher();
+    }
+
+    /**
+     * Called when Fail button is pressed. Indicates the player failed the quest and will take damage to their hp
+     */
+    public void fail() {
+        new FailQuestAsyncTask(this).execute(mQuest);
+        finish();
+    }
+
+    public void complete() {
+
+        new AsyncTask<Void, Void, Void>() {
+            boolean leveledUp;
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+
+                // Update player stats
+                final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+                statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot != null) {
+                            PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
+                            stats.gold += mQuest.reward;
+                            stats.xp += mQuest.xp;
+
+                            // Check if player leveled up
+                            int max = PlayerStats.getNextXpGoal(stats.level);
+                            leveledUp = false;
+                            while (stats.xp >= max) {
+                                leveledUp = true;
+                                stats.xp -= max;
+                                stats.level++;
+                                stats.hp++;
+                                max = PlayerStats.getNextXpGoal(stats.level);
+                            }
+
+                            // Save new stats
+                            statsRef.setValue(stats);
+
+                            // Move quest to completed past_quests and finish activity
+                            ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
+                            ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(mQuest.id).setValue(mQuest);
+                            finish();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(FirebaseError firebaseError) {
+
+                    }
+                });
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                if (leveledUp) {
+                    Toast.makeText(QuestDetailsActivity.this, "Leveled up!", Toast.LENGTH_LONG).show();
+                }
+            }
+        }.execute();
     }
 
     public void delete() {
-        Firebase ref = new Firebase("https://rpgoflife.firebaseio.com");
-        ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
-        Toast.makeText(this, "Quest deleted", Toast.LENGTH_SHORT).show();
-        finish();
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+        ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue(new Firebase.CompletionListener() {
+            @Override
+            public void onComplete(FirebaseError firebaseError, Firebase firebase) {
+                if (firebaseError != null) {
+                    Log.d(TAG, firebaseError.toString());
+                }
+                else {
+                    Log.d(TAG, "delete successful " + firebase.getKey());
+                    finish();
+                }
+            }
+        });
     }
 
     public void beginEdit() {
@@ -84,40 +212,54 @@ public class QuestDetailsActivity extends AppCompatActivity {
         descriptionLayout.addView(descriptionEdit);
         descriptionText.setVisibility(View.GONE);
 
-        difficultySpinner = new Spinner(this);
-        String[] difficulties = {Quest.EASY_DIFFICULTY, Quest.MEDIUM_DIFFICULTY, Quest.HARD_DIFFICULTY, Quest.LEGENDARY_DIFFICULTY};
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, difficulties);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        difficultySpinner.setAdapter(adapter);
-        int spinnerPos = 0;
-        switch (mQuest.difficulty) {
-            case Quest.MEDIUM_DIFFICULTY:
-                spinnerPos = 1;
-                break;
-            case Quest.HARD_DIFFICULTY:
-                spinnerPos = 2;
-                break;
-            case Quest.LEGENDARY_DIFFICULTY:
-                spinnerPos = 3;
-                break;
-        }
-        difficultySpinner.setSelection(spinnerPos);
-        difficultyLayout.addView(difficultySpinner);
-        difficultyText.setVisibility(View.GONE);
+        difficultySlider = getLayoutInflater().inflate(R.layout.difficulty_slider_layout, null);
+        SeekBar sBar = (SeekBar) difficultySlider.findViewById(R.id.progress_slider);
+        sBar.setMax(Quest.MAX_DIFFICULTY - 1);
+        sBar.setProgress(mQuest.difficulty - 1);
+        final TextView dText = (TextView) difficultySlider.findViewById(R.id.difficulty_text);
+        dText.setText(mQuest.difficulty + "");
+        sBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int adjusted = progress + 1;
+                dText.setText(adjusted + "");
+                mQuest.difficulty = adjusted;
+            }
 
-        rewardEdit = new EditText(this);
-        rewardEdit.setText(rewardText.getText());
-        rewardLayout.addView(rewardEdit);
-        rewardEdit.setInputType(InputType.TYPE_CLASS_NUMBER);
-        rewardText.setVisibility(View.GONE);
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+        difficultyLayout.addView(difficultySlider);
+        difficultyStaticContent.setVisibility(View.GONE);
+
+        rewardLayout.setVisibility(View.VISIBLE);
+        rewardEdit.setText(((TextView)findViewById(R.id.reward)).getText());
+        rewardStaticContent.setVisibility(View.GONE);
+
+        dateButton.setVisibility(View.VISIBLE);
+        dateButton.setText(getResources().getString(R.string.date_button));
+        dateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DatePickerDialogFragment dialogFragment = new DatePickerDialogFragment();
+                dialogFragment.show(getSupportFragmentManager(), "datePicker");
+            }
+        });
 
         editFab.setVisibility(View.GONE);
         deleteFab.setVisibility(View.GONE);
-        doneButton = new Button(this);
-        completeButton.setVisibility(View.GONE);
-        doneButton.setText("Done");
-        buttonLayout.addView(doneButton);
+        failButton.setVisibility(View.GONE);
 
+        completeButton.setVisibility(View.GONE);
+
+        doneButton.setVisibility(View.VISIBLE);
         doneButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -128,30 +270,57 @@ public class QuestDetailsActivity extends AppCompatActivity {
 
     public void finishEdit() {
         mQuest.description = descriptionEdit.getText().toString();
-        mQuest.difficulty = (String) difficultySpinner.getAdapter().getItem(difficultySpinner.getSelectedItemPosition());
         mQuest.reward = Integer.valueOf(rewardEdit.getText().toString());
 
+        String dueDate = dateText.getText().toString();
+        if (!dueDate.equals("")) mQuest.dueDate = dueDate;
+
         // Update Quest
-        Firebase ref = new Firebase("https://rpgoflife.firebaseio.com");
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
         String uId = ref.getAuth().getUid();
         ref.child("users").child(uId).child("quests").child(mQuest.id).setValue(mQuest);
 
         descriptionEdit.setVisibility(View.GONE);
-        difficultySpinner.setVisibility(View.GONE);
-        rewardEdit.setVisibility(View.GONE);
+        difficultySlider.setVisibility(View.GONE);
+        rewardLayout.setVisibility(View.GONE);
         doneButton.setVisibility(View.GONE);
+        dateButton.setVisibility(View.GONE);
+
         descriptionText.setVisibility(View.VISIBLE);
-        difficultyText.setVisibility(View.VISIBLE);
-        rewardText.setVisibility(View.VISIBLE);
+        difficultyStaticContent.setVisibility(View.VISIBLE);
+        rewardStaticContent.setVisibility(View.VISIBLE);
         completeButton.setVisibility(View.VISIBLE);
         editFab.setVisibility(View.VISIBLE);
         deleteFab.setVisibility(View.VISIBLE);
-        descriptionText.setText(mQuest.description);
-        difficultyText.setText(mQuest.difficulty);
-        rewardText.setText(String.valueOf(mQuest.reward));
+        failButton.setVisibility(View.VISIBLE);
 
-        Intent intent = new Intent();
-        intent.putExtra("alteredQuest", mQuest);
-        setResult(RESULT_OK, intent);
+        descriptionText.setText(mQuest.description);
+        ((TextView)findViewById(R.id.difficulty)).setText(String.valueOf(mQuest.difficulty));
+        ((TextView)findViewById(R.id.reward)).setText(String.valueOf(mQuest.reward));
+    }
+
+    @Override
+    public void onDialogDateSet(int year, int monthOfYear, int dayOfMonth) {
+        dateText.setText(monthOfYear + "/" + dayOfMonth + "/" + year);
+    }
+
+    @Override
+    public void addEventListener(IEventListener listener, String eventType) {
+        mEventDispatcher.addEventListener(listener, eventType);
+    }
+
+    @Override
+    public void removeEventListener(IEventListener listener, String eventType) {
+        mEventDispatcher.removeEventListener(listener, eventType);
+    }
+
+    @Override
+    public void dispatchEvent(Event event) {
+        mEventDispatcher.dispatchEvent(event);
+    }
+
+    @Override
+    public boolean hasEventListener(IEventListener listener, String eventType) {
+        return mEventDispatcher.hasEventListener(listener, eventType);
     }
 }

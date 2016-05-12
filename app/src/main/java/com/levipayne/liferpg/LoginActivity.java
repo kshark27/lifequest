@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.client.AuthData;
+import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 
@@ -25,6 +26,7 @@ import java.util.Map;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
+import com.firebase.client.ValueEventListener;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.UserRecoverableAuthException;
@@ -85,7 +87,7 @@ public class LoginActivity extends AppCompatActivity implements
         mSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mEmailView.getText().toString() != "" && mPasswordView.getText().toString() != "") login(false);
+                if (mEmailView.getText().toString() != "" && mPasswordView.getText().toString() != "") login();
                 else Toast.makeText(LoginActivity.this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
             }
         });
@@ -101,9 +103,9 @@ public class LoginActivity extends AppCompatActivity implements
         mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
 
         AuthData authData = mFirebaseRef.getAuth();
-        if (authData != null && authData.getAuth() != null) {
+        if (authData != null && authData.getExpires() < System.currentTimeMillis() / 1000) {
             Log.d(TAG, "id: " + authData.getUid());
-            Intent intent = new Intent(this, MainActivity.class);
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
         }
@@ -117,7 +119,12 @@ public class LoginActivity extends AppCompatActivity implements
             @Override
             public void onSuccess(Map<String, Object> result) {
                 Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
-                login(true);
+
+                // Init player stats if first login
+                PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
+                mFirebaseRef.child("users").child((String)result.get("uid")).child("stats").setValue(stats);
+
+                login();
             }
             @Override
             public void onError(FirebaseError firebaseError) {
@@ -126,18 +133,13 @@ public class LoginActivity extends AppCompatActivity implements
         });
     }
 
-    public void login(boolean firstLogIn) {
+    public void login() {
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
 
         mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(AuthData authData) {
-                // Init player stats
-                mFirebaseRef.child("users").child(authData.getUid()).child("level").setValue(1);
-                mFirebaseRef.child("users").child(authData.getUid()).child("xp").setValue(0);
-                mFirebaseRef.child("users").child(authData.getUid()).child("gold").setValue(0);
-
                 Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
