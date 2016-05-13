@@ -61,4 +61,7 @@
         <item name="past_quests">Quest History</item>
         <item name="past_rewards">Reward History</item>
     </array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
