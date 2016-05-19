@@ -12,8 +12,9 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.dialogs.DatePickerDialogFragment;
 
-public class AddQuestActivity extends AppCompatActivity implements DatePickerDialogFragment.DatePickerDialogListener {
+public class AddQuestActivity extends BatchActivity implements DatePickerDialogFragment.DatePickerDialogListener {
 
     // Form elements
     private TextView mDescriptionView;

@@ -10,7 +10,7 @@ import android.widget.Toast;
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 
-public class AddRewardActivity extends AppCompatActivity {
+public class AddRewardActivity extends BatchActivity {
 
     // Form elements
     private TextView mDescriptionView;

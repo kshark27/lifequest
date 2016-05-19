@@ -25,6 +25,14 @@ public class Quest implements Serializable {
         this.xp = xp;
     }
 
+    public Quest(PastQuest pQuest) {
+        this.description = pQuest.description;
+        this.difficulty = pQuest.difficulty;
+        this.reward = pQuest.reward;
+        this.xp = pQuest.xp;
+        this.id = pQuest.id;
+    }
+
     /**
      * Calculates amount of xp earned for completing a quest based on difficulty and player level
      * @param level Player's level

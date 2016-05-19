@@ -1,4 +1,4 @@
-package com.levipayne.liferpg;
+package com.levipayne.liferpg.dialogs;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;

@@ -39,9 +39,7 @@ import com.google.android.gms.plus.Plus;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity implements
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+public class LoginActivity extends BatchActivity {
 
     private static final String TAG = LoginActivity.class.getSimpleName();
 
@@ -50,9 +48,7 @@ public class LoginActivity extends AppCompatActivity implements
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
-    private SignInButton mGoogleLoginButton;
-
-    private GoogleApiClient mGoogleApiClient;
+    private Button mForgotPasswordButton;
 
     private Firebase mFirebaseRef;
 
@@ -68,21 +64,6 @@ public class LoginActivity extends AppCompatActivity implements
         Button mRegisterButton = (Button) findViewById(R.id.register);
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        mGoogleLoginButton = (SignInButton) findViewById(R.id.google_sign_in_button);
-
-        mGoogleLoginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
-
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Plus.API)
-                .addScope(Plus.SCOPE_PLUS_LOGIN)
-                .build();
 
         mSignInButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -100,10 +81,19 @@ public class LoginActivity extends AppCompatActivity implements
             }
         });
 
+        mForgotPasswordButton = (Button) findViewById(R.id.forgot_password_button);
+        mForgotPasswordButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+                startActivity(intent);
+            }
+        });
+
         mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
 
         AuthData authData = mFirebaseRef.getAuth();
-        if (authData != null && authData.getExpires() < System.currentTimeMillis() / 1000) {
+        if (authData != null) {
             Log.d(TAG, "id: " + authData.getUid());
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
@@ -150,22 +140,6 @@ public class LoginActivity extends AppCompatActivity implements
                 Toast.makeText(LoginActivity.this, "Log in failed", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    @Override
-    public void onConnected(final Bundle bundle) {
-
-    }
-
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
     }
 }
 

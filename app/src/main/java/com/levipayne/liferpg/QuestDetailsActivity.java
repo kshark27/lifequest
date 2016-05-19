@@ -18,13 +18,15 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.dialogs.ConfirmationDialogFragment;
+import com.levipayne.liferpg.dialogs.DatePickerDialogFragment;
+import com.levipayne.liferpg.events.ConfirmDeleteEvent;
 import com.levipayne.liferpg.events.Event;
 import com.levipayne.liferpg.events.EventDispatcher;
-import com.levipayne.liferpg.events.IEventDispatcher;
 import com.levipayne.liferpg.events.IEventListener;
 import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
 
-public class QuestDetailsActivity extends AppCompatActivity implements DatePickerDialogFragment.DatePickerDialogListener, IEventDispatcher {
+public class QuestDetailsActivity extends BatchActivity implements DatePickerDialogFragment.DatePickerDialogListener, IEventListener {
 
     private final String TAG = getClass().getSimpleName();
 
@@ -54,8 +56,6 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
     private Button failButton;
     private Button dateButton;
 
-    private EventDispatcher mEventDispatcher;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,7 +80,10 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
         deleteFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                delete();
+                ConfirmationDialogFragment dialogFragment = new ConfirmationDialogFragment();
+                dialogFragment.setMessage("Are you sure you want to delete this quest?");
+                dialogFragment.show(getSupportFragmentManager(), "DeleteConfirmation");
+                dialogFragment.addEventListener(QuestDetailsActivity.this, ConfirmDeleteEvent.TYPE);
             }
         });
 
@@ -120,8 +123,6 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
 
         completeButton = (Button) findViewById(R.id.complete_button);
         buttonLayout = (LinearLayout) findViewById(R.id.button_container);
-
-        mEventDispatcher = new EventDispatcher();
     }
 
     /**
@@ -158,16 +159,18 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
                                 leveledUp = true;
                                 stats.xp -= max;
                                 stats.level++;
-                                stats.hp++;
+                                stats.maxHp++;
                                 max = PlayerStats.getNextXpGoal(stats.level);
                             }
 
                             // Save new stats
                             statsRef.setValue(stats);
 
+                            PastQuest pQuest = new PastQuest(mQuest, true, 0);
+
                             // Move quest to completed past_quests and finish activity
                             ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
-                            ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(mQuest.id).setValue(mQuest);
+                            ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(pQuest.id).setValue(pQuest);
                             finish();
                         }
                     }
@@ -273,7 +276,7 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
         mQuest.reward = Integer.valueOf(rewardEdit.getText().toString());
 
         String dueDate = dateText.getText().toString();
-        if (!dueDate.equals("")) mQuest.dueDate = dueDate;
+        if (!dueDate.equals("") && !dueDate.equals("Not set")) mQuest.dueDate = dueDate;
 
         // Update Quest
         Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
@@ -305,22 +308,7 @@ public class QuestDetailsActivity extends AppCompatActivity implements DatePicke
     }
 
     @Override
-    public void addEventListener(IEventListener listener, String eventType) {
-        mEventDispatcher.addEventListener(listener, eventType);
-    }
-
-    @Override
-    public void removeEventListener(IEventListener listener, String eventType) {
-        mEventDispatcher.removeEventListener(listener, eventType);
-    }
-
-    @Override
-    public void dispatchEvent(Event event) {
-        mEventDispatcher.dispatchEvent(event);
-    }
-
-    @Override
-    public boolean hasEventListener(IEventListener listener, String eventType) {
-        return mEventDispatcher.hasEventListener(listener, eventType);
+    public void handleEvent(Event event) {
+        if (event.getEventType().equals(ConfirmDeleteEvent.TYPE)) delete();
     }
 }

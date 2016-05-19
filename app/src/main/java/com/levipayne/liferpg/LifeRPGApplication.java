@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.support.multidex.MultiDex;
 
+import com.batch.android.Batch;
+import com.batch.android.Config;
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 
@@ -15,8 +17,12 @@ public class LifeRPGApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
         Firebase.setAndroidContext(this);
-//        Firebase.getDefaultConfig().setPersistenceEnabled(true);
+        Firebase.getDefaultConfig().setPersistenceEnabled(true);
+
+        Batch.Push.setGCMSenderId(getResources().getString(R.string.batch_sender_id));
+        Batch.setConfig(new Config(getResources().getString(R.string.batch_dev_key)));
     }
 
     @Override

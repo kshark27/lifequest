@@ -8,13 +8,13 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.levipayne.liferpg.QuestDetailsActivity"
-    android:background="@color/quest_background">
+    tools:context="com.levipayne.liferpg.PastQuestDetailsActivity">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:id="@+id/linearLayout">
 
         <LinearLayout
             android:orientation="vertical"
@@ -185,6 +185,7 @@
                     android:text="@string/date_button"
                     android:id="@+id/date_button"
                     android:layout_marginRight="10dp"
+                    android:backgroundTint="@color/select_date"
                     android:textColor="#FFFFFF"
                     android:visibility="gone"
                     android:layout_gravity="center_vertical" />
@@ -213,46 +214,13 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/complete"
-            android:id="@+id/complete_button"
-            android:layout_alignParentBottom="true"
-            android:layout_gravity="center_horizontal"
-            android:layout_centerHorizontal="true"
-            android:backgroundTint="@color/complete_button"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/fail"
-            android:id="@+id/fail_button"
-            android:backgroundTint="@color/fail_button"
-            android:textColor="#FFFFFF" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/done_button"
-            android:id="@+id/done_button"
-            android:backgroundTint="@color/colorPrimary"
+            android:text="@string/restore"
+            android:id="@+id/restore_button"
+            android:backgroundTint="@color/colorAccent"
             android:textColor="#FFFFFF"
-            android:visibility="gone" />
+            android:visibility="visible" />
 
     </LinearLayout>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/edit_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_mode_edit_white_24dp"
-        app:elevation="4dp"
-        android:layout_gravity="right"
-        android:layout_alignParentBottom="false"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="5dp"
-        android:layout_marginRight="5dp"
-        android:layout_above="@+id/delete_fab"
-        app:backgroundTint="@color/edit_fab_color" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/delete_fab"
@@ -261,10 +229,10 @@
         android:src="@drawable/ic_delete_white_24dp"
         app:elevation="4dp"
         android:layout_gravity="right"
+        app:backgroundTint="@color/delete_fab_color"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_marginBottom="50dp"
-        android:layout_marginRight="5dp"
-        app:backgroundTint="@color/delete_fab_color" />
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp" />
 
 </RelativeLayout>

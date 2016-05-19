@@ -56,12 +56,40 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="forgot_password">Forgot Password</string>
 
     <array name="drawer_items">
+        <item name="home">Home</item>
         <item name="past_quests">Quest History</item>
-        <item name="past_rewards">Reward History</item>
+        <item name="change_password">Change Password</item>
     </array>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- ConfirmationDialog -->
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <!-- Batch -->
+    <string name="batch_dev_key">DEV573B6ECD37CD9C407944AFB2022</string>
+    <string name="batch_live_key">573B6ECD3624BA35D93065D0B413EC</string>
+    <string name="batch_sender_id">1055219132394</string>
+
+    <!-- PastQuestDetails -->
+    <string name="restore">Restore</string>
+
+    <!-- PlayerDeathDialog -->
+    <string name="death_dialog_title">Game Over</string>
+    <string name="death_dialog_message">You died! You are back to level 1.</string>
+    <string name="ok_button">OK</string>
+
+    <!-- Drawer -->
+    <string name="drawer_open">Open Drawer</string>
+    <string name="drawer_close">Close Drawer</string>
+
+    <!-- ChangePasswordFragment -->
+    <string name="current_password">Current Password</string>
+    <string name="new_password">New Password</string>
+    <string name="change_button">Change Password</string>
+
+    <!-- ForgotPasswordActivity -->
+    <string name="recover_button">Reset Password</string>
 </resources>

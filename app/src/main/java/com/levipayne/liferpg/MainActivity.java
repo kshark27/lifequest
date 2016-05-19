@@ -2,6 +2,7 @@ package com.levipayne.liferpg;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
@@ -11,6 +12,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -21,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -31,20 +34,27 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.firebase.client.core.view.Change;
+import com.levipayne.liferpg.dialogs.PlayerDeathDialog;
 import com.levipayne.liferpg.events.Event;
 import com.levipayne.liferpg.events.IEventListener;
 import com.levipayne.liferpg.events.QuestFailedEvent;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements QuestFragment.OnListFragmentInteractionListener, RewardFragment.OnListFragmentInteractionListener, IEventListener {
+public class MainActivity extends BatchActivity implements QuestFragment.OnListFragmentInteractionListener,
+        RewardFragment.OnListFragmentInteractionListener,
+        CompletedPastQuestFragment.OnListFragmentInteractionListener,
+        FailedPastQuestFragment.OnListFragmentInteractionListener,
+        IEventListener {
+
     final String TAG = MainActivity.class.getSimpleName();
 
+    // Drawer
+    private ActionBarDrawerToggle mDrawerToggle;
+    private LinearLayout mDrawer;
+
     static final int NUM_ITEMS = 2;
-    private final int QUEST_REQUEST_CODE = 1;
-    private final int REWARD_REQUEST_CODE = 2;
-    private final int QUEST_DETAIL_CODE = 3;
-    private final int REWARD_DETAIL_CODE = 4;
     private int mCurrentTabPos;
     private View mFab;
     private QuestFragment mQuestFrag;
@@ -59,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
     private ProgressBar mXpBar;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
+
+    private CharSequence mTitle;
+    private CharSequence mDrawerTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +114,12 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
                     mGoldText.setText(stats.gold + "");
 
                     // HP
-                    if (stats.hp < stats.maxHp) { // Player is not at full health
+                    if (stats.hp <= 0) { // Player died
+                        onPlayerDeath();
+                        PlayerDeathDialog dialog = new PlayerDeathDialog();
+                        dialog.show(getSupportFragmentManager(), "DeathDialog");
+                    }
+                    else if (stats.hp < stats.maxHp) { // Player is not at full health
                         // Check to see if health needs to be regenerated (at least one day has passed)
                         userRef.child("last_health_regen").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -178,6 +196,8 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
             public void onTabReselected(TabLayout.Tab tab) {
 
             }
+
+
         });
 
         FragmentManager fm = getSupportFragmentManager();
@@ -212,29 +232,56 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         // Drawer setup
         final String[] drawerItems = getResources().getStringArray(R.array.drawer_items);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+        mDrawer = (LinearLayout) findViewById(R.id.left_drawer);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer_list);
+        mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
         mDrawerList.setAdapter(new ArrayAdapter<String>(this, R.layout.drawer_list_item, drawerItems));
-        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                switch (position) {
-                    case 0: // Go to past quests
-                        break;
-                    case 1: // Go to past rewards
 
-                }
+        mDrawerTitle = "Title";
+        mDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                mDrawerLayout,         /* DrawerLayout object */
+                toolbar,
+                R.string.drawer_open,  /* "open drawer" description */
+                R.string.drawer_close  /* "close drawer" description */
+        ) {
+
+            /** Called when a drawer has settled in a completely closed state. */
+            public void onDrawerClosed(View view) {
+                super.onDrawerClosed(view);
             }
-        });
+
+            /** Called when a drawer has settled in a completely open state. */
+            public void onDrawerOpened(View drawerView) {
+                super.onDrawerOpened(drawerView);
+            }
+        };
+
+        // Set the drawer toggle as the DrawerListener
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
     }
 
-    public void showLoadingDialog() {
-        LoadingDialogFragment dialogFragment = new LoadingDialogFragment();
-        dialogFragment.show(getSupportFragmentManager(), "loading");
+    // ---------------- Lifecycle methods -------------------
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+
     }
 
-    public void hideLoadingDialog() {
-        LoadingDialogFragment loadingDialogFragment = ((LoadingDialogFragment)getSupportFragmentManager().findFragmentByTag("loading"));
-        if (loadingDialogFragment != null) loadingDialogFragment.dismiss();
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -246,9 +293,11 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -260,6 +309,18 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // -------------------------------------------------------
+
+    public void showLoadingDialog() {
+        LoadingDialogFragment dialogFragment = new LoadingDialogFragment();
+        dialogFragment.show(getSupportFragmentManager(), "loading");
+    }
+
+    public void hideLoadingDialog() {
+        LoadingDialogFragment loadingDialogFragment = ((LoadingDialogFragment)getSupportFragmentManager().findFragmentByTag("loading"));
+        if (loadingDialogFragment != null) loadingDialogFragment.dismiss();
     }
 
     public void logout() {
@@ -281,6 +342,13 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
     public void onListFragmentInteraction(Reward item) {
         Intent intent = new Intent(this, RewardDetailsActivity.class);
         intent.putExtra("reward", item);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onListFragmentInteraction(PastQuest item) {
+        Intent intent = new Intent(this, PastQuestDetailsActivity.class);
+        intent.putExtra("quest", item);
         startActivity(intent);
     }
 
@@ -375,6 +443,8 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
                     return null;
             }
         }
+
+
     }
 
     public static class LoadingDialogFragment extends DialogFragment {
@@ -388,6 +458,92 @@ public class MainActivity extends AppCompatActivity implements QuestFragment.OnL
             // Create the AlertDialog object and return it
             return builder.create();
         }
+    }
+
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView parent, View view, int position, long id) {
+            selectItem(position);
+        }
+    }
+
+    int mCurrentPage = 0;
+    Fragment mCurrentFragment;
+    /** Swaps fragments in the main content view */
+    public void selectItem(int position) {
+        Log.d(TAG, "selectItem() called");
+        switch (position) {
+            case 0:
+                if (mCurrentPage != 0) {
+                    mFab.setVisibility(View.VISIBLE);
+
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    fragmentManager.beginTransaction()
+                            .remove(mCurrentFragment)
+                            .commit();
+
+                    mDrawerList.setItemChecked(position, true);
+                }
+                mDrawerLayout.closeDrawer(mDrawer);
+                break;
+            case 1:
+                mFab.setVisibility(View.GONE);
+                Fragment fragment = PastQuestFragment.newInstance();
+                mCurrentFragment = fragment;
+                mCurrentPage = 1;
+
+                // Insert the fragment by replacing any existing fragment
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                fragmentManager.beginTransaction()
+                        .replace(R.id.content_frame, fragment)
+                        .commit();
+
+                // Highlight the selected item, update the title, and close the drawer
+                mDrawerList.setItemChecked(position, true);
+                mDrawerLayout.closeDrawer(mDrawer);
+                break;
+            case 2:
+                mFab.setVisibility(View.GONE);
+                Fragment passwordFragment = new ChangePasswordFragment();
+                mCurrentFragment = passwordFragment;
+                mCurrentPage = 2;
+
+                // Insert the fragment by replacing any existing fragment
+                FragmentManager fragmentManager2 = getSupportFragmentManager();
+                fragmentManager2.beginTransaction()
+                        .replace(R.id.content_frame, passwordFragment)
+                        .commit();
+
+                // Highlight the selected item, update the title, and close the drawer
+                mDrawerList.setItemChecked(position, true);
+                mDrawerLayout.closeDrawer(mDrawer);
+                break;
+        }
+    }
+
+    @Override
+    public void setTitle(CharSequence title) {
+        mTitle = title;
+        getActionBar().setTitle(mTitle);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mCurrentPage == 0) super.onBackPressed(); // Exit app
+        else selectItem(0); // Go home
+    }
+
+    /**
+     * Call when player dies. Resets level, xp, and health
+     */
+    public void onPlayerDeath() {
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+        Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+
+        statsRef.child("level").setValue(1);
+        statsRef.child("xp").setValue(0);
+        statsRef.child("maxHp").setValue(PlayerStats.START_MAX_HP);
+        statsRef.child("hp").setValue(PlayerStats.START_MAX_HP);
     }
 
 }

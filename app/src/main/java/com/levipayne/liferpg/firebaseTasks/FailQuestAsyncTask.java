@@ -8,6 +8,7 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.PastQuest;
 import com.levipayne.liferpg.PlayerStats;
 import com.levipayne.liferpg.Quest;
 import com.levipayne.liferpg.R;
@@ -35,14 +36,17 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     if (dataSnapshot.getValue() != null) {
                         PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
-                        stats.hp = Math.max(stats.hp - (int)Math.ceil((double)(Quest.MAX_DIFFICULTY - quest.difficulty + 1)/2.0), 0); // More hp is lost the easier the quest
+                        int hpLost = calculateHpLost(stats.hp, quest.difficulty);
+                        stats.hp -= hpLost;
 
                         // Save new stats
                         statsRef.setValue(stats);
 
+                        PastQuest pQuest = new PastQuest(quest, false, hpLost);
+
                         // Move quest to failed past_quests and finish activity
                         ref.child("users").child(ref.getAuth().getUid()).child("quests").child(quest.id).removeValue();
-                        ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("failed").child(quest.id).setValue(quest);
+                        ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("failed").child(pQuest.id).setValue(pQuest);
                     }
                 }
 
@@ -75,5 +79,11 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
         if (leveledUp) {
             Toast.makeText(mContext, "Leveled up!", Toast.LENGTH_LONG).show();
         }
+    }
+
+    public static int calculateHpLost(int hp, int difficulty) {
+        int maxDamage = (int)Math.ceil((double)(Quest.MAX_DIFFICULTY - difficulty + 1)/2.0);
+        if (hp - maxDamage >= 0) return maxDamage;
+        else return hp;
     }
 }

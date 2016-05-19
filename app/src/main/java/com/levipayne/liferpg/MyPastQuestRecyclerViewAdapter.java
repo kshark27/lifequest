@@ -17,6 +17,7 @@ import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -26,40 +27,32 @@ import java.util.List;
 public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQuestRecyclerViewAdapter.ViewHolder> {
     final String TAG = MyPastQuestRecyclerViewAdapter.class.getSimpleName();
 
-    private final List<Quest> mValues;
+    private final List<PastQuest> mValues;
     private final MainActivity mListener;
     private final Firebase mFirebaseRef;
 
-    public MyPastQuestRecyclerViewAdapter(List<Quest> items, MainActivity listener, boolean complete) {
-        mValues = items;
+    public MyPastQuestRecyclerViewAdapter(MainActivity listener, boolean complete) {
+        mValues = new ArrayList<>();
         mListener = listener;
 
         mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url));
         AuthData authData = mFirebaseRef.getAuth();
         String uId = authData.getUid();
         Firebase questsRef = mFirebaseRef.child("users").child(uId).child("past_quests");
-        if (complete) questsRef = questsRef.child("complete");
+        if (complete) questsRef = questsRef.child("completed");
         else questsRef = questsRef.child("failed");
 
         questsRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                Quest quest = dataSnapshot.getValue(Quest.class);
-                mValues.add(quest);
+                PastQuest quest = dataSnapshot.getValue(PastQuest.class);
+                mValues.add(0, quest);
                 notifyDataSetChanged();
-
-                if (quest.dueDate != null) {
-                    try {
-                        checkQuestExpiration(quest);
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                Quest quest = dataSnapshot.getValue(Quest.class);
+                PastQuest quest = dataSnapshot.getValue(PastQuest.class);
                 int index = -1;
                 for (int i = 0; i < mValues.size(); i++) {
                     if (mValues.get(i).id.equals(quest.id)) index = i;
@@ -73,7 +66,7 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-                Quest quest = dataSnapshot.getValue(Quest.class);
+                PastQuest quest = dataSnapshot.getValue(PastQuest.class);
                 int index = -1;
                 for (int i = 0; i < mValues.size(); i++) {
                     if (mValues.get(i).id.equals(quest.id)) index = i;
@@ -91,31 +84,6 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
                 Log.d(TAG, firebaseError.toString());
             }
         });
-    }
-
-    public void checkQuestExpiration(Quest quest) throws ParseException {
-        Log.d(TAG, "Quest due date: " + quest.dueDate);
-        SimpleDateFormat format = new SimpleDateFormat("M/d/yyyy");
-        Calendar dueDate = Calendar.getInstance();
-        dueDate.setTime(format.parse(quest.dueDate));
-        Calendar currDate = Calendar.getInstance();
-        Log.d(TAG, "Due date for <" + quest.description + "> is: " + dueDate.toString());
-        if (!isToday(dueDate) && currDate.after(dueDate)) { // Quest is past due
-            // Fail quest
-            new FailQuestAsyncTask(mListener).execute(quest);
-            Log.d(TAG, "quest: <" + quest.description + "> expired");
-        }
-        else Log.d(TAG, "quest: <" + quest.description + "> not expired");
-    }
-
-    public boolean isToday(Calendar date1) {
-        Calendar currDate = Calendar.getInstance();
-        Log.d(TAG, "Day:[" + date1.get(Calendar.DAY_OF_MONTH) + "," + currDate.get(Calendar.DAY_OF_MONTH) + "]");
-        Log.d(TAG, "Month:[" + date1.get(Calendar.MONTH) + "," + currDate.get(Calendar.MONTH) + "]");
-        Log.d(TAG, "Year:[" + date1.get(Calendar.YEAR) + "," + currDate.get(Calendar.YEAR) + "]");
-        return date1.get(Calendar.DAY_OF_MONTH) == currDate.get(Calendar.DAY_OF_MONTH)
-                && date1.get(Calendar.MONTH) == currDate.get(Calendar.MONTH)
-                && date1.get(Calendar.YEAR) == currDate.get(Calendar.YEAR);
     }
 
     @Override
@@ -149,11 +117,6 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
         });
     }
 
-    public void addItem(Quest q) {
-        mValues.add(q);
-        this.notifyDataSetChanged();
-    }
-
     @Override
     public int getItemCount() {
         return mValues.size();
@@ -165,7 +128,7 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
         public final TextView mDifficultyView;
         public final TextView mGoldView;
         public final LinearLayout mDateContainer;
-        public Quest mQuest;
+        public PastQuest mQuest;
 
         public ViewHolder(View view) {
             super(view);

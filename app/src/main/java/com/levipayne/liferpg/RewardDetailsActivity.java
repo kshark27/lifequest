@@ -17,8 +17,12 @@ import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.dialogs.ConfirmationDialogFragment;
+import com.levipayne.liferpg.events.ConfirmDeleteEvent;
+import com.levipayne.liferpg.events.Event;
+import com.levipayne.liferpg.events.IEventListener;
 
-public class RewardDetailsActivity extends AppCompatActivity {
+public class RewardDetailsActivity extends BatchActivity implements IEventListener {
 
     private Reward mReward;
     private LinearLayout descriptionLayout;
@@ -55,7 +59,11 @@ public class RewardDetailsActivity extends AppCompatActivity {
         deleteFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                delete();
+                ConfirmationDialogFragment dialogFragment = new ConfirmationDialogFragment();
+                dialogFragment.setMessage("Are you sure you want to delete this reward?");
+                dialogFragment.setEvent(new ConfirmDeleteEvent(dialogFragment));
+                dialogFragment.show(getSupportFragmentManager(), "DeleteConfirmation");
+                dialogFragment.addEventListener(RewardDetailsActivity.this, ConfirmDeleteEvent.TYPE);
             }
         });
 
@@ -181,5 +189,10 @@ public class RewardDetailsActivity extends AppCompatActivity {
         Intent intent = new Intent();
         intent.putExtra("alteredReward", mReward);
         setResult(RESULT_OK, intent);
+    }
+
+    @Override
+    public void handleEvent(Event event) {
+        if (event.getEventType().equals(ConfirmDeleteEvent.TYPE)) delete();
     }
 }

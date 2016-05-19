@@ -5,6 +5,8 @@ package com.levipayne.liferpg;
  */
 public class PlayerStats {
 
+    public static final int START_MAX_HP = 5;
+
     public int gold;
     public int level;
     public int xp;
