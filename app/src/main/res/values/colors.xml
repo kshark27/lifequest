@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#303f9f</color>
     <color name="colorAccent">#00bcd4</color>
 
+    <color name="showcase_background">#ed00bcd4</color>
+
     <!-- Quest colors based on difficulty -->
     <color name="easyColor">#99ff99</color>
     <color name="mediumColor">#ffff99</color>

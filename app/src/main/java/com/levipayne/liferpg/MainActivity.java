@@ -1,6 +1,7 @@
 package com.levipayne.liferpg;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
@@ -16,8 +17,10 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +29,7 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +39,12 @@ import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 import com.firebase.client.core.view.Change;
+import com.github.amlcurran.showcaseview.OnShowcaseEventListener;
+import com.github.amlcurran.showcaseview.ShowcaseView;
+import com.github.amlcurran.showcaseview.targets.ActionItemTarget;
+import com.github.amlcurran.showcaseview.targets.ActionViewTarget;
+import com.github.amlcurran.showcaseview.targets.PointTarget;
+import com.github.amlcurran.showcaseview.targets.ViewTarget;
 import com.levipayne.liferpg.dialogs.PlayerDeathDialog;
 import com.levipayne.liferpg.events.Event;
 import com.levipayne.liferpg.events.IEventListener;
@@ -92,13 +102,13 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         Log.d(TAG, "id: " + authData.getUid());
         final Firebase userRef = ref.child(authData.getUid());
 
-        showLoadingDialog();
+        showLoadingDialog(this);
 
         // Load Stats into views
         userRef.child("stats").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot != null) {
+                if (dataSnapshot.getValue() != null) {
                     final PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
 
                     // Level
@@ -144,8 +154,6 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                                     userRef.child("last_health_regen").setValue(System.currentTimeMillis());
                                 }
                                 mHpText.setText(newStats.hp + "/" + newStats.maxHp);
-
-                                hideLoadingDialog();
                             }
 
                             @Override
@@ -156,9 +164,8 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                     }
                     else {
                         mHpText.setText(stats.hp + "/" + stats.maxHp);
-
-                        hideLoadingDialog();
                     }
+                    hideLoadingDialog(MainActivity.this);
                 }
             }
 
@@ -262,6 +269,12 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
+
+        // Launch tutorial views if first login
+        boolean launchTutorial = getIntent().getBooleanExtra("firstLogin", false);
+//        if (launchTutorial) {
+            launchTutorial();
+//        }
     }
 
     // ---------------- Lifecycle methods -------------------
@@ -313,13 +326,13 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
     // -------------------------------------------------------
 
-    public void showLoadingDialog() {
+    public static void showLoadingDialog(BatchActivity activity) {
         LoadingDialogFragment dialogFragment = new LoadingDialogFragment();
-        dialogFragment.show(getSupportFragmentManager(), "loading");
+        dialogFragment.show(activity.getSupportFragmentManager(), "loading");
     }
 
-    public void hideLoadingDialog() {
-        LoadingDialogFragment loadingDialogFragment = ((LoadingDialogFragment)getSupportFragmentManager().findFragmentByTag("loading"));
+    public static void hideLoadingDialog(BatchActivity activity) {
+        LoadingDialogFragment loadingDialogFragment = ((LoadingDialogFragment)activity.getSupportFragmentManager().findFragmentByTag("loading"));
         if (loadingDialogFragment != null) loadingDialogFragment.dismiss();
     }
 
@@ -475,7 +488,9 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         switch (position) {
             case 0:
                 if (mCurrentPage != 0) {
+                    getSupportActionBar().setTitle(getResources().getString(R.string.app_name));
                     mFab.setVisibility(View.VISIBLE);
+                    mCurrentPage = 0;
 
                     FragmentManager fragmentManager = getSupportFragmentManager();
                     fragmentManager.beginTransaction()
@@ -483,39 +498,48 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                             .commit();
 
                     mDrawerList.setItemChecked(position, true);
+                    mDrawerList.setSelection(position);
                 }
                 mDrawerLayout.closeDrawer(mDrawer);
                 break;
             case 1:
-                mFab.setVisibility(View.GONE);
-                Fragment fragment = PastQuestFragment.newInstance();
-                mCurrentFragment = fragment;
-                mCurrentPage = 1;
+                if (mCurrentPage != 1) {
+                    getSupportActionBar().setTitle(getResources().getString(R.string.quest_history_title));
+                    mFab.setVisibility(View.GONE);
+                    Fragment fragment = PastQuestFragment.newInstance();
+                    mCurrentFragment = fragment;
+                    mCurrentPage = 1;
 
-                // Insert the fragment by replacing any existing fragment
-                FragmentManager fragmentManager = getSupportFragmentManager();
-                fragmentManager.beginTransaction()
-                        .replace(R.id.content_frame, fragment)
-                        .commit();
+                    // Insert the fragment by replacing any existing fragment
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    fragmentManager.beginTransaction()
+                            .replace(R.id.content_frame, fragment)
+                            .commit();
 
-                // Highlight the selected item, update the title, and close the drawer
-                mDrawerList.setItemChecked(position, true);
+                    // Highlight the selected item, update the title, and close the drawer
+                    mDrawerList.setItemChecked(position, true);
+                    mDrawerList.setSelection(position);
+                }
                 mDrawerLayout.closeDrawer(mDrawer);
                 break;
             case 2:
-                mFab.setVisibility(View.GONE);
-                Fragment passwordFragment = new ChangePasswordFragment();
-                mCurrentFragment = passwordFragment;
-                mCurrentPage = 2;
+                if (mCurrentPage != 2) {
+                    getSupportActionBar().setTitle(getResources().getString(R.string.change_password_title));
+                    mFab.setVisibility(View.GONE);
+                    Fragment passwordFragment = new ChangePasswordFragment();
+                    mCurrentFragment = passwordFragment;
+                    mCurrentPage = 2;
 
-                // Insert the fragment by replacing any existing fragment
-                FragmentManager fragmentManager2 = getSupportFragmentManager();
-                fragmentManager2.beginTransaction()
-                        .replace(R.id.content_frame, passwordFragment)
-                        .commit();
+                    // Insert the fragment by replacing any existing fragment
+                    FragmentManager fragmentManager2 = getSupportFragmentManager();
+                    fragmentManager2.beginTransaction()
+                            .replace(R.id.content_frame, passwordFragment)
+                            .commit();
 
-                // Highlight the selected item, update the title, and close the drawer
-                mDrawerList.setItemChecked(position, true);
+                    // Highlight the selected item, update the title, and close the drawer
+                    mDrawerList.setItemChecked(position, true);
+                    mDrawerList.setSelection(position);
+                }
                 mDrawerLayout.closeDrawer(mDrawer);
                 break;
         }
@@ -544,6 +568,153 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         statsRef.child("xp").setValue(0);
         statsRef.child("maxHp").setValue(PlayerStats.START_MAX_HP);
         statsRef.child("hp").setValue(PlayerStats.START_MAX_HP);
+    }
+
+    /**
+     * Very ugly method that launches showcase views consecutively. Hopefully can clean this up later
+     */
+    public void launchTutorial() {
+        new ShowcaseView.Builder(this)
+                .setTarget(new ViewTarget(findViewById(R.id.level_text)))
+                .setContentTitle(getResources().getString(R.string.showcase_title_level))
+                .setContentText(getResources().getString(R.string.showcase_text_level))
+                .hideOnTouchOutside()
+                .setStyle(R.style.CustomShowcaseTheme)
+                .withMaterialShowcase()
+                .setShowcaseEventListener(new OnShowcaseEventListener() {
+                    @Override
+                    public void onShowcaseViewHide(ShowcaseView showcaseView) {
+                        new ShowcaseView.Builder(MainActivity.this)
+                                .setTarget(new ViewTarget(findViewById(R.id.hp_container)))
+                                .setContentTitle(getResources().getString(R.string.showcase_title_hp))
+                                .setContentText(getResources().getString(R.string.showcase_text_hp))
+                                .hideOnTouchOutside()
+                                .setStyle(R.style.CustomShowcaseTheme)
+                                .withMaterialShowcase()
+                                .setShowcaseEventListener(new OnShowcaseEventListener() {
+                                    @Override
+                                    public void onShowcaseViewHide(ShowcaseView showcaseView) {
+                                        new ShowcaseView.Builder(MainActivity.this)
+                                                .setTarget(new ViewTarget(findViewById(R.id.gold_container)))
+                                                .setContentTitle(getResources().getString(R.string.showcase_title_gold))
+                                                .setContentText(getResources().getString(R.string.showcase_text_gold))
+                                                .hideOnTouchOutside()
+                                                .setStyle(R.style.CustomShowcaseTheme)
+                                                .withMaterialShowcase()
+                                                .setShowcaseEventListener(new OnShowcaseEventListener() {
+                                                    @Override
+                                                    public void onShowcaseViewHide(ShowcaseView showcaseView) {
+                                                        new ShowcaseView.Builder(MainActivity.this)
+                                                                .setTarget(new ViewTarget(findViewById(R.id.addFAB)))
+                                                                .setContentTitle(getResources().getString(R.string.showcase_title_add))
+                                                                .setContentText(getResources().getString(R.string.showcase_text_add))
+                                                                .hideOnTouchOutside()
+                                                                .setStyle(R.style.CustomShowcaseTheme)
+                                                                .withMaterialShowcase()
+                                                                .setShowcaseEventListener(new OnShowcaseEventListener() {
+                                                                    @Override
+                                                                    public void onShowcaseViewHide(ShowcaseView showcaseView) {
+                                                                        new ShowcaseView.Builder(MainActivity.this)
+                                                                                .setTarget(new PointTarget(75,150))
+                                                                                .setContentTitle(getResources().getString(R.string.showcase_title_drawer))
+                                                                                .setContentText(getResources().getString(R.string.showcase_text_drawer))
+                                                                                .hideOnTouchOutside()
+                                                                                .setStyle(R.style.CustomShowcaseTheme)
+                                                                                .withMaterialShowcase()
+                                                                                .setShowcaseEventListener(new OnShowcaseEventListener() {
+                                                                                    @Override
+                                                                                    public void onShowcaseViewHide(ShowcaseView showcaseView) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onShowcaseViewDidHide(ShowcaseView showcaseView) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onShowcaseViewShow(ShowcaseView showcaseView) {
+
+                                                                                    }
+
+                                                                                    @Override
+                                                                                    public void onShowcaseViewTouchBlocked(MotionEvent motionEvent) {
+
+                                                                                    }
+                                                                                })
+                                                                                .build();
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onShowcaseViewDidHide(ShowcaseView showcaseView) {
+
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onShowcaseViewShow(ShowcaseView showcaseView) {
+
+                                                                    }
+
+                                                                    @Override
+                                                                    public void onShowcaseViewTouchBlocked(MotionEvent motionEvent) {
+
+                                                                    }
+                                                                })
+                                                                .build();
+                                                    }
+
+                                                    @Override
+                                                    public void onShowcaseViewDidHide(ShowcaseView showcaseView) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onShowcaseViewShow(ShowcaseView showcaseView) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onShowcaseViewTouchBlocked(MotionEvent motionEvent) {
+
+                                                    }
+                                                })
+                                                .build();
+                                    }
+
+                                    @Override
+                                    public void onShowcaseViewDidHide(ShowcaseView showcaseView) {
+
+                                    }
+
+                                    @Override
+                                    public void onShowcaseViewShow(ShowcaseView showcaseView) {
+
+                                    }
+
+                                    @Override
+                                    public void onShowcaseViewTouchBlocked(MotionEvent motionEvent) {
+
+                                    }
+                                })
+                                .build();
+                    }
+
+                    @Override
+                    public void onShowcaseViewDidHide(ShowcaseView showcaseView) {
+
+                    }
+
+                    @Override
+                    public void onShowcaseViewShow(ShowcaseView showcaseView) {
+
+                    }
+
+                    @Override
+                    public void onShowcaseViewTouchBlocked(MotionEvent motionEvent) {
+
+                    }
+                })
+                .build();
     }
 
 }

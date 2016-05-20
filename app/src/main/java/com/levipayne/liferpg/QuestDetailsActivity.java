@@ -134,64 +134,57 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
     }
 
     public void complete() {
+        MainActivity.showLoadingDialog(this);
 
-        new AsyncTask<Void, Void, Void>() {
-            boolean leveledUp;
+        final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
 
+        // Update player stats
+        final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+        statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            protected Void doInBackground(Void... params) {
-                final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.getValue() != null) {
+                    boolean leveledUp;
+                    PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
+                    stats.gold += mQuest.reward;
+                    stats.xp += mQuest.xp;
 
-                // Update player stats
-                final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
-                statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        if (dataSnapshot != null) {
-                            PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
-                            stats.gold += mQuest.reward;
-                            stats.xp += mQuest.xp;
-
-                            // Check if player leveled up
-                            int max = PlayerStats.getNextXpGoal(stats.level);
-                            leveledUp = false;
-                            while (stats.xp >= max) {
-                                leveledUp = true;
-                                stats.xp -= max;
-                                stats.level++;
-                                stats.maxHp++;
-                                max = PlayerStats.getNextXpGoal(stats.level);
-                            }
-
-                            // Save new stats
-                            statsRef.setValue(stats);
-
-                            PastQuest pQuest = new PastQuest(mQuest, true, 0);
-
-                            // Move quest to completed past_quests and finish activity
-                            ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
-                            ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(pQuest.id).setValue(pQuest);
-                            finish();
-                        }
+                    // Check if player leveled up
+                    int max = PlayerStats.getNextXpGoal(stats.level);
+                    leveledUp = false;
+                    while (stats.xp >= max) {
+                        leveledUp = true;
+                        stats.xp -= max;
+                        stats.level++;
+                        stats.maxHp++;
+                        max = PlayerStats.getNextXpGoal(stats.level);
                     }
 
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
+                    // Save new stats
+                    statsRef.setValue(stats);
 
+                    PastQuest pQuest = new PastQuest(mQuest, true, 0);
+
+                    // Move quest to completed past_quests and finish activity
+                    ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
+                    ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(pQuest.id).setValue(pQuest);
+
+                    if (leveledUp) {
+                        Toast.makeText(QuestDetailsActivity.this, "Leveled up!", Toast.LENGTH_LONG).show();
                     }
-                });
-                return null;
-            }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                if (leveledUp) {
-                    Toast.makeText(QuestDetailsActivity.this, "Leveled up!", Toast.LENGTH_LONG).show();
+                    MainActivity.hideLoadingDialog(QuestDetailsActivity.this);
+                    finish();
                 }
             }
-        }.execute();
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
     }
+
 
     public void delete() {
         Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));

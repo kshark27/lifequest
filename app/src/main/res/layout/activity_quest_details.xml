@@ -185,7 +185,6 @@
                     android:text="@string/date_button"
                     android:id="@+id/date_button"
                     android:layout_marginRight="10dp"
-                    android:textColor="#FFFFFF"
                     android:visibility="gone"
                     android:layout_gravity="center_vertical" />
 
@@ -234,7 +233,7 @@
             android:layout_height="wrap_content"
             android:text="@string/done_button"
             android:id="@+id/done_button"
-            android:backgroundTint="@color/colorPrimary"
+            android:backgroundTint="@color/colorAccent"
             android:textColor="#FFFFFF"
             android:visibility="gone" />
 

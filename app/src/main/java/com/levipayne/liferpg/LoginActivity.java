@@ -68,7 +68,7 @@ public class LoginActivity extends BatchActivity {
         mSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mEmailView.getText().toString() != "" && mPasswordView.getText().toString() != "") login();
+                if (mEmailView.getText().toString() != "" && mPasswordView.getText().toString() != "") login(false);
                 else Toast.makeText(LoginActivity.this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
             }
         });
@@ -105,16 +105,15 @@ public class LoginActivity extends BatchActivity {
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
 
+        MainActivity.showLoadingDialog(this);
+
         mFirebaseRef.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
             @Override
             public void onSuccess(Map<String, Object> result) {
                 Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
+                MainActivity.hideLoadingDialog(LoginActivity.this);
 
-                // Init player stats if first login
-                PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
-                mFirebaseRef.child("users").child((String)result.get("uid")).child("stats").setValue(stats);
-
-                login();
+                login(true);
             }
             @Override
             public void onError(FirebaseError firebaseError) {
@@ -123,16 +122,45 @@ public class LoginActivity extends BatchActivity {
         });
     }
 
-    public void login() {
+    public void login(final boolean firstLogin) {
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
+
+        MainActivity.showLoadingDialog(this);
 
         mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
             @Override
             public void onAuthenticated(AuthData authData) {
                 Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
 
+                if (firstLogin) {
+                    // Init player stats if first login
+                    PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
+                    mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("stats").setValue(stats);
+
+                    // Add a couple starter quests/rewards
+                    Quest quest1 = new Quest("Create your first quest", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                    Quest quest2 = new Quest("Create your first reward", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                    Reward reward1 = new Reward("Treat yourself to something nice!", 20);
+
+                    Firebase questRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("quests");
+                    Firebase questRef1 = questRef.push();
+                    quest1.id = questRef1.getKey();
+                    questRef1.setValue(quest1);
+                    Firebase questRef2 = questRef.push();
+                    quest2.id = questRef2.getKey();
+                    questRef2.setValue(quest2);
+
+                    Firebase rewardRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("rewards");
+                    Firebase rewardRef1 = rewardRef.push();
+                    reward1.id = rewardRef1.getKey();
+                    rewardRef1.setValue(reward1);
+                }
+
+                MainActivity.hideLoadingDialog(LoginActivity.this);
+
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                intent.putExtra("firstLogin", firstLogin);
                 startActivity(intent);
             }
             @Override

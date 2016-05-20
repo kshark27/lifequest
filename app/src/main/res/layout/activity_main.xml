@@ -42,16 +42,25 @@
         android:dividerHeight="0dp"
         android:background="#FFFFFF" >
 
-        <LinearLayout
-            android:orientation="vertical"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="150dp"
-            android:background="@color/colorPrimary"></LinearLayout>
+            android:background="@color/colorPrimary">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/imageView17"
+                android:layout_gravity="center"
+                android:src="@drawable/icon"
+                android:layout_centerHorizontal="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="25dp" />
+        </RelativeLayout>
         <ListView
             android:id="@+id/left_drawer_list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#FFFFFF"></ListView>
+            android:layout_height="match_parent"></ListView>
     </LinearLayout>
 
 </android.support.v4.widget.DrawerLayout>

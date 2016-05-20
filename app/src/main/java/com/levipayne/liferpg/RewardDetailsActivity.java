@@ -85,52 +85,36 @@ public class RewardDetailsActivity extends BatchActivity implements IEventListen
     }
 
     public void purchase() {
-        new AsyncTask<Void, Void, Void>() {
-            boolean success = false;
-
+        MainActivity.showLoadingDialog(this);
+        // Get player stats (in order to get player's total gold)
+        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+        final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+        statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            protected Void doInBackground(Void... params) {
-                // Get player stats (in order to get player's total gold)
-                Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-                final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
-                statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        if (dataSnapshot != null) {
-                            PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
-                            if (stats.gold > mReward.cost) { // Purchase item (deduct from player gold)
-                                success = true;
-                                stats.gold -= mReward.cost;
-                                statsRef.setValue(stats);
-                            }
-                        }
-                        else { // Player does not have enough gold
-                            success = false;
-                        }
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.getValue() != null) {
+                    PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
+                    String toastMessage = "";
+                    if (stats.gold >= mReward.cost) { // Purchase item (deduct from player gold)
+                        toastMessage = "Reward purchased!";
+                        stats.gold -= mReward.cost;
+                        statsRef.setValue(stats);
+                        delete();
+                    }
+                    else { // Player does not have enough gold
+                        toastMessage = "You do not have enough gold to purchase this.";
                     }
 
-                    @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-
-                    }
-                });
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-
-                String toastMessage = "";
-                if (success) toastMessage = "Reward purchased!";
-                else toastMessage = "You do not have enough gold to purchase this.";
-                Toast.makeText(RewardDetailsActivity.this, toastMessage, Toast.LENGTH_LONG).show();
-
-                if (success) { // Delete reward and finish
-                    delete();
+                    MainActivity.hideLoadingDialog(RewardDetailsActivity.this);
+                    Toast.makeText(RewardDetailsActivity.this, toastMessage, Toast.LENGTH_LONG).show();
                 }
             }
-        }.execute();
+
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+
+            }
+        });
     }
 
     public void delete() {

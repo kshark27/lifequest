@@ -12,7 +12,7 @@ import com.firebase.client.Firebase;
 /**
  * Created by Levi on 4/29/2016.
  */
-public class LifeRPGApplication extends Application {
+public class LifeQuestApplication extends Application {
 
     @Override
     public void onCreate() {
