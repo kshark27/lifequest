@@ -2,6 +2,7 @@ package com.levipayne.liferpg;
 
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -11,8 +12,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 
 /**
@@ -45,22 +49,42 @@ public class ChangePasswordFragment extends Fragment {
         mChangeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MainActivity.showLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
+
                 String currPassword = mCurrPasswordEdit.getText().toString();
-                String newPassword = mNewPasswordEdit.getText().toString();
+                final String newPassword = mNewPasswordEdit.getText().toString();
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-                Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-                ref.changePassword(ref.getAuth().getProviderData().get("email").toString(), currPassword, newPassword, new Firebase.ResultHandler() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(getActivity(), "Password changed!", Toast.LENGTH_LONG).show();
-                        ((MainActivity)getActivity()).selectItem(0); // Go home
-                    }
+                FirebaseAuth.getInstance().signInWithEmailAndPassword(user.getEmail(), currPassword)
+                        .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                if (task.isSuccessful()) {
+                                    FirebaseAuth.getInstance().getCurrentUser().updatePassword(newPassword)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        Toast.makeText(getActivity(), "Password changed!", Toast.LENGTH_LONG).show();
+                                                        ((MainActivity)getActivity()).selectItem(0); // Go home
+                                                    }
+                                                    else {
+                                                        Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
 
-                    @Override
-                    public void onError(FirebaseError firebaseError) {
-                        Toast.makeText(getActivity(), "Something went wrong. Please try again.", Toast.LENGTH_LONG).show();
-                    }
-                });
+                                                    }
+                                                    MainActivity.hideLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
+                                                }
+                                            });
+                                }
+                                else {
+                                    Toast.makeText(getActivity(), "Current password is incorrect", Toast.LENGTH_LONG).show();
+                                    MainActivity.hideLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
+                                }
+                            }
+                        });
+
+
+
             }
         });
     }

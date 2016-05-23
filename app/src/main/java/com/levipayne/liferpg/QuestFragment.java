@@ -6,22 +6,14 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.Query;
-import com.firebase.client.ValueEventListener;
+import com.levipayne.liferpg.models.Quest;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A fragment representing a list of Items.
@@ -38,7 +30,6 @@ public class QuestFragment extends Fragment {
     private MainActivity mListener;
     private List<Quest> quests;
     MyQuestRecyclerViewAdapter adapter;
-    private Firebase mFirebaseRef;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the

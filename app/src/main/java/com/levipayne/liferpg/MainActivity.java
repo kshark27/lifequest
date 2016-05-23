@@ -1,11 +1,11 @@
 package com.levipayne.liferpg;
 
 import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -15,17 +15,17 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -33,26 +33,30 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
-import com.firebase.client.core.view.Change;
 import com.github.amlcurran.showcaseview.OnShowcaseEventListener;
 import com.github.amlcurran.showcaseview.ShowcaseView;
-import com.github.amlcurran.showcaseview.targets.ActionItemTarget;
-import com.github.amlcurran.showcaseview.targets.ActionViewTarget;
 import com.github.amlcurran.showcaseview.targets.PointTarget;
 import com.github.amlcurran.showcaseview.targets.ViewTarget;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.levipayne.liferpg.dialogs.PlayerDeathDialog;
 import com.levipayne.liferpg.events.Event;
+import com.levipayne.liferpg.events.EventDispatcher;
 import com.levipayne.liferpg.events.IEventListener;
+import com.levipayne.liferpg.events.PlayerDiedEvent;
 import com.levipayne.liferpg.events.QuestFailedEvent;
+import com.levipayne.liferpg.models.PastQuest;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
+import com.levipayne.liferpg.models.Reward;
 
 import java.util.List;
 
-public class MainActivity extends BatchActivity implements QuestFragment.OnListFragmentInteractionListener,
+public class MainActivity extends PortraitActivity implements QuestFragment.OnListFragmentInteractionListener,
         RewardFragment.OnListFragmentInteractionListener,
         CompletedPastQuestFragment.OnListFragmentInteractionListener,
         FailedPastQuestFragment.OnListFragmentInteractionListener,
@@ -66,7 +70,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
     static final int NUM_ITEMS = 2;
     private int mCurrentTabPos;
-    private View mFab;
+    private FloatingActionButton mFab;
     private QuestFragment mQuestFrag;
     private RewardFragment mRewardFrag;
     private DialogFragment mCurrentDialog;
@@ -82,6 +86,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
     private CharSequence mTitle;
     private CharSequence mDrawerTitle;
+    private ValueEventListener mStatListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,15 +102,17 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         mHpText = (TextView) findViewById(R.id.hp);
         mXpBar = (ProgressBar) findViewById(R.id.xp_bar);
 
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url) + "/users");
-        AuthData authData = ref.getAuth();
-        Log.d(TAG, "id: " + authData.getUid());
-        final Firebase userRef = ref.child(authData.getUid());
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final DatabaseReference userRef = database.getReference().child("users").child(auth.getCurrentUser().getUid());
 
         showLoadingDialog(this);
 
+        final EventDispatcher dispatcher = new EventDispatcher();
+        dispatcher.addEventListener(this, PlayerDiedEvent.TYPE);
+
         // Load Stats into views
-        userRef.child("stats").addValueEventListener(new ValueEventListener() {
+        mStatListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.getValue() != null) {
@@ -125,9 +132,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
                     // HP
                     if (stats.hp <= 0) { // Player died
-                        onPlayerDeath();
-                        PlayerDeathDialog dialog = new PlayerDeathDialog();
-                        dialog.show(getSupportFragmentManager(), "DeathDialog");
+                        dispatcher.dispatchEvent(new PlayerDiedEvent(dispatcher));
                     }
                     else if (stats.hp < stats.maxHp) { // Player is not at full health
                         // Check to see if health needs to be regenerated (at least one day has passed)
@@ -146,7 +151,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                                     Log.d(TAG, "Health regenerated after " + elapsedDays + " days");
                                 } else Log.d(TAG, "Health not regenerated");
 
-                                PlayerStats newStats = stats;
+                                PlayerStats newStats = new PlayerStats(stats.gold, stats.level, stats.xp, stats.hp, stats.maxHp);
                                 if (heartsToRegen > 0) {
                                     newStats.hp = Math.min(stats.maxHp, stats.hp + heartsToRegen);
 
@@ -157,7 +162,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                             }
 
                             @Override
-                            public void onCancelled(FirebaseError firebaseError) {
+                            public void onCancelled(DatabaseError firebaseError) {
 
                             }
                         });
@@ -170,10 +175,15 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
 
             }
-        });
+        };
+
+//        if (savedInstanceState != null) {
+//            getSupportFragmentManager().popBackStack(null, getSupportFragmentManager().POP_BACK_STACK_INCLUSIVE);
+//            mCurrentPage = savedInstanceState.getInt("currentPage");
+//        }
 
         mCurrentTabPos = 0;
 
@@ -217,7 +227,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         }
 
         // FAB
-        mFab = findViewById(R.id.addFAB);
+        mFab = (FloatingActionButton) findViewById(R.id.addFAB);
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -272,15 +282,72 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
         // Launch tutorial views if first login
         boolean launchTutorial = getIntent().getBooleanExtra("firstLogin", false);
-//        if (launchTutorial) {
+        if (launchTutorial) {
             launchTutorial();
-//        }
+        }
+
+        // Set up hide fab button
+        final ImageView button = (ImageView)findViewById(R.id.arrow_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mFab.isShown()) {
+                    mFab.show();
+                    button.setImageDrawable(MainActivity.this.getResources().getDrawable(R.drawable.ic_keyboard_arrow_right_black_24dp));
+                }
+                else {
+                    mFab.hide();
+                    button.setImageDrawable(MainActivity.this.getResources().getDrawable(R.drawable.ic_keyboard_arrow_left_black_24dp));
+                }
+            }
+        });
     }
 
     // ---------------- Lifecycle methods -------------------
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    public void onStop() {
+        super.onStop();
+
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference statsRef = database.getReference().child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("stats");
+            statsRef.removeEventListener(mStatListener);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference statsRef = database.getReference().child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("stats");
+        statsRef.addValueEventListener(mStatListener);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle bundle) {
+        bundle.putInt("currentPage", mCurrentPage);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle bundle) {
+        super.onRestoreInstanceState(bundle);
+
 
     }
 
@@ -314,9 +381,9 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
         if (id == R.id.action_logout) {
             logout();
         }
@@ -326,19 +393,18 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
     // -------------------------------------------------------
 
-    public static void showLoadingDialog(BatchActivity activity) {
+    public static void showLoadingDialog(PortraitActivity activity) {
         LoadingDialogFragment dialogFragment = new LoadingDialogFragment();
         dialogFragment.show(activity.getSupportFragmentManager(), "loading");
     }
 
-    public static void hideLoadingDialog(BatchActivity activity) {
+    public static void hideLoadingDialog(PortraitActivity activity) {
         LoadingDialogFragment loadingDialogFragment = ((LoadingDialogFragment)activity.getSupportFragmentManager().findFragmentByTag("loading"));
         if (loadingDialogFragment != null) loadingDialogFragment.dismiss();
     }
 
     public void logout() {
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        ref.unauth();
+        FirebaseAuth.getInstance().signOut();
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
         finish();
@@ -379,10 +445,11 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
 
                 @Override
                 protected Void doInBackground(Void... params) {
-                    final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+                    final FirebaseAuth auth = FirebaseAuth.getInstance();
+                    final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
 
                     // Update player stats
-                    final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+                    final DatabaseReference statsRef = ref.child("users").child(auth.getCurrentUser().getUid()).child("stats");
                     statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -394,20 +461,20 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                                 statsRef.setValue(stats);
 
                                 // Move quest to failed past_quests and finish activity
-                                ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
-                                ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("failed").child(mQuest.id).setValue(mQuest);
+                                ref.child("users").child(auth.getCurrentUser().getUid()).child("quests").child(mQuest.id).removeValue();
+                                ref.child("users").child(auth.getCurrentUser().getUid()).child("past_quests").child("failed").child(mQuest.id).setValue(mQuest);
                                 finish();
                             }
                         }
 
                         @Override
-                        public void onCancelled(FirebaseError firebaseError) {
+                        public void onCancelled(DatabaseError firebaseError) {
 
                         }
                     });
 
                     // Set last_health_regen to current time (if null) so regeneration will work
-                    final Firebase lastRegenRef = ref.child("users").child(ref.getAuth().getUid()).child("last_health_regen");
+                    final DatabaseReference lastRegenRef = ref.child("users").child(auth.getCurrentUser().getUid()).child("last_health_regen");
                     lastRegenRef.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -415,7 +482,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                         }
 
                         @Override
-                        public void onCancelled(FirebaseError firebaseError) {
+                        public void onCancelled(DatabaseError firebaseError) {
 
                         }
                     });
@@ -430,6 +497,9 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                     }
                 }
             }.execute();
+        }
+        else if (event.getEventType().equals(PlayerDiedEvent.TYPE)) {
+            onPlayerDeath();
         }
     }
 
@@ -548,7 +618,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
     @Override
     public void setTitle(CharSequence title) {
         mTitle = title;
-        getActionBar().setTitle(mTitle);
+        getSupportActionBar().setTitle(mTitle);
     }
 
     @Override
@@ -561,13 +631,32 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
      * Call when player dies. Resets level, xp, and health
      */
     public void onPlayerDeath() {
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+        PlayerDeathDialog dialog = new PlayerDeathDialog();
+        dialog.show(getSupportFragmentManager(), "DeathDialog");
 
-        statsRef.child("level").setValue(1);
-        statsRef.child("xp").setValue(0);
-        statsRef.child("maxHp").setValue(PlayerStats.START_MAX_HP);
-        statsRef.child("hp").setValue(PlayerStats.START_MAX_HP);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference statsRef = ref.child("users").child(auth.getCurrentUser().getUid()).child("stats");
+
+        statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.getValue() != null) {
+                    PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
+                    stats.level = 1;
+                    stats.hp = PlayerStats.START_MAX_HP;
+                    stats.maxHp = PlayerStats.START_MAX_HP;
+                    stats.xp = 0;
+
+                    dataSnapshot.getRef().setValue(stats);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /**
@@ -604,7 +693,7 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                                                 .setShowcaseEventListener(new OnShowcaseEventListener() {
                                                     @Override
                                                     public void onShowcaseViewHide(ShowcaseView showcaseView) {
-                                                        new ShowcaseView.Builder(MainActivity.this)
+                                                        ShowcaseView view = new ShowcaseView.Builder(MainActivity.this)
                                                                 .setTarget(new ViewTarget(findViewById(R.id.addFAB)))
                                                                 .setContentTitle(getResources().getString(R.string.showcase_title_add))
                                                                 .setContentText(getResources().getString(R.string.showcase_text_add))
@@ -661,6 +750,12 @@ public class MainActivity extends BatchActivity implements QuestFragment.OnListF
                                                                     }
                                                                 })
                                                                 .build();
+                                                        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                                                        params.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                                                        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+                                                        params.bottomMargin = 25;
+                                                        params.leftMargin = 25;
+                                                        view.setButtonPosition(params);
                                                     }
 
                                                     @Override

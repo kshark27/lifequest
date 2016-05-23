@@ -4,8 +4,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.levipayne.liferpg.Quest;
-import com.levipayne.liferpg.Reward;
+import com.levipayne.liferpg.models.Quest;
+import com.levipayne.liferpg.models.Reward;
 
 /**
  * Created by Levi on 4/28/2016.

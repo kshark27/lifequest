@@ -1,45 +1,30 @@
 package com.levipayne.liferpg;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.util.Log;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static android.Manifest.permission.READ_CONTACTS;
-
-import com.firebase.client.ValueEventListener;
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.plus.Plus;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
+import com.levipayne.liferpg.models.Reward;
 
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends BatchActivity {
+public class LoginActivity extends PortraitActivity {
 
     private static final String TAG = LoginActivity.class.getSimpleName();
 
@@ -50,7 +35,7 @@ public class LoginActivity extends BatchActivity {
     private View mLoginFormView;
     private Button mForgotPasswordButton;
 
-    private Firebase mFirebaseRef;
+    private FirebaseAuth mFirebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,11 +75,9 @@ public class LoginActivity extends BatchActivity {
             }
         });
 
-        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
-
-        AuthData authData = mFirebaseRef.getAuth();
-        if (authData != null) {
-            Log.d(TAG, "id: " + authData.getUid());
+        mFirebaseAuth = FirebaseAuth.getInstance();
+//
+        if (mFirebaseAuth.getCurrentUser() != null) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
@@ -107,19 +90,22 @@ public class LoginActivity extends BatchActivity {
 
         MainActivity.showLoadingDialog(this);
 
-        mFirebaseRef.createUser(email, password, new Firebase.ValueResultHandler<Map<String, Object>>() {
-            @Override
-            public void onSuccess(Map<String, Object> result) {
-                Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
-                MainActivity.hideLoadingDialog(LoginActivity.this);
+        mFirebaseAuth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
+                        MainActivity.hideLoadingDialog(LoginActivity.this);
 
-                login(true);
-            }
-            @Override
-            public void onError(FirebaseError firebaseError) {
-                Toast.makeText(LoginActivity.this, "Failed to register", Toast.LENGTH_SHORT).show();
-            }
-        });
+                        login(true);
+                    }
+                    else {
+                        Toast.makeText(LoginActivity.this, "Failed to register", Toast.LENGTH_SHORT).show();
+                        MainActivity.hideLoadingDialog(LoginActivity.this);
+                    }
+                }
+            });
     }
 
     public void login(final boolean firstLogin) {
@@ -128,46 +114,50 @@ public class LoginActivity extends BatchActivity {
 
         MainActivity.showLoadingDialog(this);
 
-        mFirebaseRef.authWithPassword(email, password, new Firebase.AuthResultHandler() {
-            @Override
-            public void onAuthenticated(AuthData authData) {
-                Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
+        mFirebaseAuth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                @Override
+                public void onComplete(@NonNull Task<AuthResult> task) {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
 
-                if (firstLogin) {
-                    // Init player stats if first login
-                    PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
-                    mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("stats").setValue(stats);
+                        if (firstLogin) {
+                            // Init player stats if first login
+                            FirebaseDatabase database = FirebaseDatabase.getInstance();
+                            PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
+                            database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("stats").setValue(stats);
 
-                    // Add a couple starter quests/rewards
-                    Quest quest1 = new Quest("Create your first quest", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
-                    Quest quest2 = new Quest("Create your first reward", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
-                    Reward reward1 = new Reward("Treat yourself to something nice!", 20);
+                            // Add a couple starter quests/rewards
+                            Quest quest1 = new Quest("Create your first quest", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                            Quest quest2 = new Quest("Create your first reward", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                            Reward reward1 = new Reward("Treat yourself to something nice!", 20);
 
-                    Firebase questRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("quests");
-                    Firebase questRef1 = questRef.push();
-                    quest1.id = questRef1.getKey();
-                    questRef1.setValue(quest1);
-                    Firebase questRef2 = questRef.push();
-                    quest2.id = questRef2.getKey();
-                    questRef2.setValue(quest2);
+                            DatabaseReference questRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("quests");
+                            DatabaseReference questRef1 = questRef.push();
+                            quest1.id = questRef1.getKey();
+                            questRef1.setValue(quest1);
+                            DatabaseReference questRef2 = questRef.push();
+                            quest2.id = questRef2.getKey();
+                            questRef2.setValue(quest2);
 
-                    Firebase rewardRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("rewards");
-                    Firebase rewardRef1 = rewardRef.push();
-                    reward1.id = rewardRef1.getKey();
-                    rewardRef1.setValue(reward1);
+                            DatabaseReference rewardRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("rewards");
+                            DatabaseReference rewardRef1 = rewardRef.push();
+                            reward1.id = rewardRef1.getKey();
+                            rewardRef1.setValue(reward1);
+                        }
+
+                        MainActivity.hideLoadingDialog(LoginActivity.this);
+
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.putExtra("firstLogin", firstLogin);
+                        startActivity(intent);
+                    }
+                    else {
+                        Toast.makeText(LoginActivity.this, "Log in failed", Toast.LENGTH_SHORT).show();
+                        MainActivity.hideLoadingDialog(LoginActivity.this);
+                    }
                 }
-
-                MainActivity.hideLoadingDialog(LoginActivity.this);
-
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                intent.putExtra("firstLogin", firstLogin);
-                startActivity(intent);
-            }
-            @Override
-            public void onAuthenticationError(FirebaseError firebaseError) {
-                Toast.makeText(LoginActivity.this, "Log in failed", Toast.LENGTH_SHORT).show();
-            }
-        });
+            });
     }
 }
 

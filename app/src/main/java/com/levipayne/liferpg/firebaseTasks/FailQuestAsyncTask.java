@@ -2,16 +2,16 @@ package com.levipayne.liferpg.firebaseTasks;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
-import com.levipayne.liferpg.PastQuest;
-import com.levipayne.liferpg.PlayerStats;
-import com.levipayne.liferpg.Quest;
-import com.levipayne.liferpg.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.levipayne.liferpg.models.PastQuest;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
 
 /**
  * Created by Levi on 5/12/2016.
@@ -27,10 +27,11 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
     @Override
     protected Void doInBackground(Quest... params) {
         for (final Quest quest : params) {
-            final Firebase ref = new Firebase(mContext.getResources().getString(R.string.firebase_url));
+            final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+            final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
             // Update player stats
-            final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+            final DatabaseReference statsRef = ref.child("users").child(uid).child("stats");
             statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -45,19 +46,19 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
                         PastQuest pQuest = new PastQuest(quest, false, hpLost);
 
                         // Move quest to failed past_quests and finish activity
-                        ref.child("users").child(ref.getAuth().getUid()).child("quests").child(quest.id).removeValue();
-                        ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("failed").child(pQuest.id).setValue(pQuest);
+                        ref.child("users").child(uid).child("quests").child(quest.id).removeValue();
+                        ref.child("users").child(uid).child("past_quests").child("failed").child(pQuest.id).setValue(pQuest);
                     }
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {
+                public void onCancelled(DatabaseError firebaseError) {
 
                 }
             });
 
             // Set last_health_regen to current time (if null) so regeneration will work
-            final Firebase lastRegenRef = ref.child("users").child(ref.getAuth().getUid()).child("last_health_regen");
+            final DatabaseReference lastRegenRef = ref.child("users").child(uid).child("last_health_regen");
             lastRegenRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -65,7 +66,7 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {
+                public void onCancelled(DatabaseError firebaseError) {
 
                 }
             });
@@ -76,9 +77,6 @@ public class FailQuestAsyncTask extends AsyncTask<Quest,Void,Void> {
     @Override
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
-        if (leveledUp) {
-            Toast.makeText(mContext, "Leveled up!", Toast.LENGTH_LONG).show();
-        }
     }
 
     public static int calculateHpLost(int hp, int difficulty) {

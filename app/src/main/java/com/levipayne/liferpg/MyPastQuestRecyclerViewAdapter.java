@@ -8,17 +8,15 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.ChildEventListener;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.levipayne.liferpg.models.PastQuest;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -29,16 +27,15 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
 
     private final List<PastQuest> mValues;
     private final MainActivity mListener;
-    private final Firebase mFirebaseRef;
+    private final DatabaseReference mFirebaseRef;
 
     public MyPastQuestRecyclerViewAdapter(MainActivity listener, boolean complete) {
         mValues = new ArrayList<>();
         mListener = listener;
 
-        mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url));
-        AuthData authData = mFirebaseRef.getAuth();
-        String uId = authData.getUid();
-        Firebase questsRef = mFirebaseRef.child("users").child(uId).child("past_quests");
+        mFirebaseRef = FirebaseDatabase.getInstance().getReference();
+        String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference questsRef = mFirebaseRef.child("users").child(uId).child("past_quests");
         if (complete) questsRef = questsRef.child("completed");
         else questsRef = questsRef.child("failed");
 
@@ -80,7 +77,7 @@ public class MyPastQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyPastQ
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
                 Log.d(TAG, firebaseError.toString());
             }
         });

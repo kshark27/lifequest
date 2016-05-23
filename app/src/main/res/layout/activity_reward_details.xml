@@ -71,6 +71,17 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginRight="10dp" />
 
+                <EditText
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/cost_edit"
+                    android:maxLength="8"
+                    style="@style/EditTextStyle"
+                    android:textAlignment="center"
+                    android:visibility="gone"/>
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

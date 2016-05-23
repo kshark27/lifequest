@@ -7,11 +7,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.ChildEventListener;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.levipayne.liferpg.models.Reward;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,39 +28,15 @@ public class MyRewardRecyclerViewAdapter extends RecyclerView.Adapter<MyRewardRe
 
     private final List<Reward> mValues;
     private final MainActivity mListener;
-    private final Firebase mFirebaseRef;
+    private final DatabaseReference mFirebaseRef;
 
     public MyRewardRecyclerViewAdapter(List<Reward> items, MainActivity listener) {
         mValues = new ArrayList<>();
         mListener = listener;
 
-        mFirebaseRef = new Firebase("https://rpgoflife.firebaseio.com");
-        AuthData authData = mFirebaseRef.getAuth();
-        String uId = authData.getUid();
-        Log.d(TAG, "id: " + authData.getUid());
-        Firebase rewardsRef = mFirebaseRef.child("users").child(uId).child("rewards");
-//        rewardsRef.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot snapshot) {
-//                Map<String, Object> rewardMap = (Map<String, Object>) snapshot.getValue();
-//                List<Reward> rewards = new ArrayList<>();
-//                for (String key : rewardMap.keySet()) {
-//                    HashMap<String, Object> rewardVals = (HashMap<String, Object>) rewardMap.get(key);
-//                    String description = (String) rewardVals.get("description");
-//                    int cost = (int) ((long) rewardVals.get("cost"));
-//                    Reward reward = new Reward(description, cost);
-//                    reward.id = key;
-//                    rewards.add(reward);
-//                }
-//                MyRewardRecyclerViewAdapter.this.mValues.clear();
-//                MyRewardRecyclerViewAdapter.this.mValues.addAll(rewards);
-//                notifyDataSetChanged();
-//            }
-//            @Override
-//            public void onCancelled(FirebaseError firebaseError) {
-//                Log.d(TAG, firebaseError.toString());
-//            }
-//        });
+        mFirebaseRef = FirebaseDatabase.getInstance().getReference();
+        String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference rewardsRef = mFirebaseRef.child("users").child(uId).child("rewards");
 
         rewardsRef.addChildEventListener(new ChildEventListener() {
             @Override
@@ -98,7 +76,7 @@ public class MyRewardRecyclerViewAdapter extends RecyclerView.Adapter<MyRewardRe
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
                 Log.d(TAG, firebaseError.toString());
             }
         });

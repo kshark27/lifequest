@@ -1,21 +1,23 @@
 package com.levipayne.liferpg;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.Firebase;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.levipayne.liferpg.models.Reward;
 
-public class AddRewardActivity extends BatchActivity {
+
+public class AddRewardActivity extends PortraitActivity {
 
     // Form elements
     private TextView mDescriptionView;
     private TextView mCostView;
-    private Firebase mFirebaseRef;
+    private DatabaseReference mFirebaseRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +27,7 @@ public class AddRewardActivity extends BatchActivity {
         mDescriptionView = (TextView) findViewById(R.id.description);
         mCostView = (TextView) findViewById(R.id.difficulty);
 
-        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
+        mFirebaseRef = FirebaseDatabase.getInstance().getReference();
     }
 
     public void submit(View view) {
@@ -38,8 +40,7 @@ public class AddRewardActivity extends BatchActivity {
             Reward reward = new Reward(description, cost);
 
             // Save reward
-            AuthData authData = mFirebaseRef.getAuth();
-            Firebase newRef = mFirebaseRef.child("users").child(authData.getUid()).child("rewards").push();
+            DatabaseReference newRef = mFirebaseRef.child("users").child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("rewards").push();
             String id = newRef.getKey();
             reward.id = id;
             newRef.setValue(reward);

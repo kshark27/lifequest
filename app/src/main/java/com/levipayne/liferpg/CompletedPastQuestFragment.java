@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.ArrayList;
+import com.levipayne.liferpg.models.PastQuest;
 
 public class CompletedPastQuestFragment extends Fragment {
     private static final String TAG = CompletedPastQuestFragment.class.getSimpleName();

@@ -144,6 +144,7 @@
                     android:inputType="number"
                     android:ems="10"
                     android:id="@+id/reward_edit"
+                    android:maxLength="8"
                     style="@style/EditTextStyle"
                     android:textAlignment="center" />
             </LinearLayout>

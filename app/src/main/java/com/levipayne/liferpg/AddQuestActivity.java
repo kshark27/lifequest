@@ -1,6 +1,5 @@
 package com.levipayne.liferpg;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -8,13 +7,17 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.levipayne.liferpg.dialogs.DatePickerDialogFragment;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
 
-public class AddQuestActivity extends BatchActivity implements DatePickerDialogFragment.DatePickerDialogListener {
+public class AddQuestActivity extends PortraitActivity implements DatePickerDialogFragment.DatePickerDialogListener {
 
     // Form elements
     private TextView mDescriptionView;
@@ -22,7 +25,7 @@ public class AddQuestActivity extends BatchActivity implements DatePickerDialogF
     private TextView mRewardView;
     private Button mDateButton;
 
-    private Firebase mFirebaseRef;
+    private DatabaseReference mFirebaseRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +67,7 @@ public class AddQuestActivity extends BatchActivity implements DatePickerDialogF
             }
         });
 
-        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
+        mFirebaseRef = FirebaseDatabase.getInstance().getReference();
     }
 
     public void showDatePickerDialog() {
@@ -77,7 +80,9 @@ public class AddQuestActivity extends BatchActivity implements DatePickerDialogF
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
         }
         else {
-            mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("stats").addListenerForSingleValueEvent(new ValueEventListener() {
+            FirebaseAuth auth = FirebaseAuth.getInstance();
+            final String uid = auth.getCurrentUser().getUid();
+            mFirebaseRef.child("users").child(uid).child("stats").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     if (dataSnapshot != null) {
@@ -95,8 +100,7 @@ public class AddQuestActivity extends BatchActivity implements DatePickerDialogF
                         if (!dueDate.equals("")) quest.dueDate = dueDate;
 
                         // Save quest
-                        mFirebaseRef = new Firebase(getResources().getString(R.string.firebase_url));
-                        Firebase newRef = mFirebaseRef.child("users").child(mFirebaseRef.getAuth().getUid()).child("quests").push();
+                        DatabaseReference newRef = mFirebaseRef.child("users").child(uid).child("quests").push();
                         String id = newRef.getKey();
                         quest.id = id;
                         newRef.setValue(quest);
@@ -106,7 +110,7 @@ public class AddQuestActivity extends BatchActivity implements DatePickerDialogF
                 }
 
                 @Override
-                public void onCancelled(FirebaseError firebaseError) {
+                public void onCancelled(DatabaseError firebaseError) {
 
                 }
             });

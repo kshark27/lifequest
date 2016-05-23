@@ -1,6 +1,6 @@
 package com.levipayne.liferpg.events;
 
-import com.levipayne.liferpg.Quest;
+import com.levipayne.liferpg.models.Quest;
 
 /**
  * Created by Levi on 5/11/2016.

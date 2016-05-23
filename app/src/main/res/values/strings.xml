@@ -72,11 +72,6 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
 
-    <!-- Batch -->
-    <string name="batch_dev_key">DEV573B6ECD37CD9C407944AFB2022</string>
-    <string name="batch_live_key">573B6ECD3624BA35D93065D0B413EC</string>
-    <string name="batch_sender_id">1055219132394</string>
-
     <!-- PastQuestDetails -->
     <string name="restore">Restore</string>
 

@@ -2,36 +2,38 @@ package com.levipayne.liferpg;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.levipayne.liferpg.dialogs.ConfirmationDialogFragment;
-import com.levipayne.liferpg.dialogs.DatePickerDialogFragment;
 import com.levipayne.liferpg.events.ConfirmDeleteEvent;
 import com.levipayne.liferpg.events.ConfirmRestoreEvent;
 import com.levipayne.liferpg.events.Event;
-import com.levipayne.liferpg.events.EventDispatcher;
 import com.levipayne.liferpg.events.IEventListener;
-import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
+import com.levipayne.liferpg.models.PastQuest;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
 
 /**
  * This class displays information of a single quest which has already been removed from the user's active quests
  * either by completing or failing it. Gives the user an opportunity to restore quests to active status and view
  * their quest history.
  */
-public class PastQuestDetailsActivity extends BatchActivity implements IEventListener {
+public class PastQuestDetailsActivity extends PortraitActivity implements IEventListener {
 
     private final String TAG = getClass().getSimpleName();
 
@@ -59,6 +61,7 @@ public class PastQuestDetailsActivity extends BatchActivity implements IEventLis
             public void onClick(View v) {
                 ConfirmationDialogFragment dialogFragment = new ConfirmationDialogFragment();
                 dialogFragment.setMessage("Are you sure you want to delete this quest?");
+                dialogFragment.setEvent(new ConfirmDeleteEvent(dialogFragment));
                 dialogFragment.show(getSupportFragmentManager(), "DeleteConfirmation");
                 dialogFragment.addEventListener(PastQuestDetailsActivity.this, ConfirmDeleteEvent.TYPE);
             }
@@ -88,10 +91,11 @@ public class PastQuestDetailsActivity extends BatchActivity implements IEventLis
 
             @Override
             protected Void doInBackground(Void... params) {
-                final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+                final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+                final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
                 // Update player stats
-                final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+                final DatabaseReference statsRef = ref.child("users").child(uid).child("stats");
                 statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -106,15 +110,15 @@ public class PastQuestDetailsActivity extends BatchActivity implements IEventLis
 
                             // Move quest to completed past_quests and finish activity
 
-                            if (mQuest.completed) ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(mQuest.id).removeValue();
-                            else ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("failed").child(mQuest.id).removeValue();
-                            ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).setValue(quest);
+                            if (mQuest.completed) ref.child("users").child(uid).child("past_quests").child("completed").child(mQuest.id).removeValue();
+                            else ref.child("users").child(uid).child("past_quests").child("failed").child(mQuest.id).removeValue();
+                            ref.child("users").child(uid).child("quests").child(mQuest.id).setValue(quest);
                             finish();
                         }
                     }
 
                     @Override
-                    public void onCancelled(FirebaseError firebaseError) {
+                    public void onCancelled(DatabaseError firebaseError) {
 
                     }
                 });
@@ -132,19 +136,24 @@ public class PastQuestDetailsActivity extends BatchActivity implements IEventLis
     }
 
     public void delete() {
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child(mQuest.id).removeValue(new Firebase.CompletionListener() {
-            @Override
-            public void onComplete(FirebaseError firebaseError, Firebase firebase) {
-                if (firebaseError != null) {
-                    Log.d(TAG, firebaseError.toString());
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference pastQuestRef = ref.child("users").child(uid).child("past_quests");
+        if (mQuest.completed) pastQuestRef = pastQuestRef.child("completed").child(mQuest.id);
+        else pastQuestRef = pastQuestRef.child("failed").child(mQuest.id);
+        pastQuestRef.removeValue()
+            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "delete successful");
+                        finish();
+                    }
+                    else {
+                        Log.d(TAG, "Delete failed");
+                    }
                 }
-                else {
-                    Log.d(TAG, "delete successful " + firebase.getKey());
-                    finish();
-                }
-            }
-        });
+            });
     }
 
     @Override

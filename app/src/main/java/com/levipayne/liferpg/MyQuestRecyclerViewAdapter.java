@@ -8,13 +8,14 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.ChildEventListener;
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
+import com.levipayne.liferpg.models.Quest;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,16 +32,15 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
 
     private final List<Quest> mValues;
     private final MainActivity mListener;
-    private final Firebase mFirebaseRef;
+    private final DatabaseReference mFirebaseRef;
 
     public MyQuestRecyclerViewAdapter(List<Quest> items, MainActivity listener) {
         mValues = items;
         mListener = listener;
 
-        mFirebaseRef = new Firebase(listener.getResources().getString(R.string.firebase_url));
-        AuthData authData = mFirebaseRef.getAuth();
-        String uId = authData.getUid();
-        Firebase questsRef = mFirebaseRef.child("users").child(uId).child("quests");
+        mFirebaseRef = FirebaseDatabase.getInstance().getReference();
+        String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference questsRef = mFirebaseRef.child("users").child(uId).child("quests");
 
         questsRef.addChildEventListener(new ChildEventListener() {
             @Override
@@ -88,10 +88,12 @@ public class MyQuestRecyclerViewAdapter extends RecyclerView.Adapter<MyQuestRecy
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
                 Log.d(TAG, firebaseError.toString());
             }
         });
+
+
     }
 
     public void checkQuestExpiration(Quest quest) throws ParseException {

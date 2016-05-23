@@ -1,4 +1,4 @@
-package com.levipayne.liferpg;
+package com.levipayne.liferpg.models;
 
 import java.io.Serializable;
 

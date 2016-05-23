@@ -10,6 +10,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.levipayne.liferpg.models.Reward;
+
 import java.util.ArrayList;
 import java.util.List;
 

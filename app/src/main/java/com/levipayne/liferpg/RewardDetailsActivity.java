@@ -1,9 +1,7 @@
 package com.levipayne.liferpg;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.View;
@@ -13,16 +11,20 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.levipayne.liferpg.dialogs.ConfirmationDialogFragment;
 import com.levipayne.liferpg.events.ConfirmDeleteEvent;
 import com.levipayne.liferpg.events.Event;
 import com.levipayne.liferpg.events.IEventListener;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Reward;
 
-public class RewardDetailsActivity extends BatchActivity implements IEventListener {
+public class RewardDetailsActivity extends PortraitActivity implements IEventListener {
 
     private Reward mReward;
     private LinearLayout descriptionLayout;
@@ -87,8 +89,9 @@ public class RewardDetailsActivity extends BatchActivity implements IEventListen
     public void purchase() {
         MainActivity.showLoadingDialog(this);
         // Get player stats (in order to get player's total gold)
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        final DatabaseReference statsRef = ref.child("users").child(uid).child("stats");
         statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -111,15 +114,16 @@ public class RewardDetailsActivity extends BatchActivity implements IEventListen
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
 
             }
         });
     }
 
     public void delete() {
-        Firebase ref = new Firebase("https://rpgoflife.firebaseio.com");
-        ref.child("users").child(ref.getAuth().getUid()).child("rewards").child(mReward.id).removeValue();
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        ref.child("users").child(uid).child("rewards").child(mReward.id).removeValue();
 //        Toast.makeText(this, "Reward deleted", Toast.LENGTH_SHORT).show();
         finish();
     }
@@ -130,9 +134,9 @@ public class RewardDetailsActivity extends BatchActivity implements IEventListen
         descriptionLayout.addView(descriptionEdit);
         descriptionText.setVisibility(View.GONE);
 
-        costEdit = new EditText(this);
+        costEdit = (EditText) findViewById(R.id.cost_edit);
+        costEdit.setVisibility(View.VISIBLE);
         costEdit.setText(costText.getText());
-        costLayout.addView(costEdit);
         costEdit.setInputType(InputType.TYPE_CLASS_NUMBER);
         costText.setVisibility(View.GONE);
 
@@ -154,8 +158,9 @@ public class RewardDetailsActivity extends BatchActivity implements IEventListen
         mReward.cost = Integer.valueOf(costEdit.getText().toString());
 
         // Update Quest
-        Firebase ref = new Firebase("https://rpgoflife.firebaseio.com/users");
-        ref.child(ref.getAuth().getUid()).child("rewards").child(mReward.id).setValue(mReward);
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        ref.child("users").child(uid).child("rewards").child(mReward.id).setValue(mReward);
 
         descriptionEdit.setVisibility(View.GONE);
         costEdit.setVisibility(View.GONE);

@@ -1,9 +1,8 @@
 package com.levipayne.liferpg;
 
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,19 +13,25 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.levipayne.liferpg.dialogs.ConfirmationDialogFragment;
 import com.levipayne.liferpg.dialogs.DatePickerDialogFragment;
 import com.levipayne.liferpg.events.ConfirmDeleteEvent;
 import com.levipayne.liferpg.events.Event;
-import com.levipayne.liferpg.events.EventDispatcher;
 import com.levipayne.liferpg.events.IEventListener;
 import com.levipayne.liferpg.firebaseTasks.FailQuestAsyncTask;
+import com.levipayne.liferpg.models.PastQuest;
+import com.levipayne.liferpg.models.PlayerStats;
+import com.levipayne.liferpg.models.Quest;
 
-public class QuestDetailsActivity extends BatchActivity implements DatePickerDialogFragment.DatePickerDialogListener, IEventListener {
+public class QuestDetailsActivity extends PortraitActivity implements DatePickerDialogFragment.DatePickerDialogListener, IEventListener {
 
     private final String TAG = getClass().getSimpleName();
 
@@ -99,7 +104,8 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
         failButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                fail();
+                fail(QuestDetailsActivity.this,mQuest);
+                finish();
             }
         });
 
@@ -128,18 +134,63 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
     /**
      * Called when Fail button is pressed. Indicates the player failed the quest and will take damage to their hp
      */
-    public void fail() {
-        new FailQuestAsyncTask(this).execute(mQuest);
-        finish();
+    public static void fail(final PortraitActivity activity, final Quest quest) {
+        MainActivity.showLoadingDialog(activity);
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Update player stats
+        final DatabaseReference statsRef = ref.child("users").child(uid).child("stats");
+        statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.getValue() != null) {
+                    PlayerStats stats = dataSnapshot.getValue(PlayerStats.class);
+                    int hpLost = FailQuestAsyncTask.calculateHpLost(stats.hp, quest.difficulty);
+                    stats.hp -= hpLost;
+
+                    // Save new stats
+                    dataSnapshot.getRef().removeValue();
+                    dataSnapshot.getRef().setValue(stats);
+
+                    PastQuest pQuest = new PastQuest(quest, false, hpLost);
+
+                    // Move quest to failed past_quests and finish activity
+                    ref.child("users").child(uid).child("quests").child(quest.id).removeValue();
+                    ref.child("users").child(uid).child("past_quests").child("failed").child(pQuest.id).setValue(pQuest);
+
+                    // Set last_health_regen to current time (if null) so regeneration will work
+                    final DatabaseReference lastRegenRef = ref.child("users").child(uid).child("last_health_regen");
+                    lastRegenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.getValue() == null) lastRegenRef.setValue(System.currentTimeMillis());
+                            MainActivity.hideLoadingDialog(activity);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError firebaseError) {
+                            MainActivity.hideLoadingDialog(activity);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError firebaseError) {
+
+            }
+        });
     }
 
     public void complete() {
         MainActivity.showLoadingDialog(this);
 
-        final Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         // Update player stats
-        final Firebase statsRef = ref.child("users").child(ref.getAuth().getUid()).child("stats");
+        final DatabaseReference statsRef = ref.child("users").child(uid).child("stats");
         statsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -157,6 +208,7 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
                         stats.xp -= max;
                         stats.level++;
                         stats.maxHp++;
+                        stats.hp++;
                         max = PlayerStats.getNextXpGoal(stats.level);
                     }
 
@@ -166,8 +218,8 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
                     PastQuest pQuest = new PastQuest(mQuest, true, 0);
 
                     // Move quest to completed past_quests and finish activity
-                    ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue();
-                    ref.child("users").child(ref.getAuth().getUid()).child("past_quests").child("completed").child(pQuest.id).setValue(pQuest);
+                    ref.child("users").child(uid).child("quests").child(mQuest.id).removeValue();
+                    ref.child("users").child(uid).child("past_quests").child("completed").child(pQuest.id).setValue(pQuest);
 
                     if (leveledUp) {
                         Toast.makeText(QuestDetailsActivity.this, "Leveled up!", Toast.LENGTH_LONG).show();
@@ -179,7 +231,7 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
+            public void onCancelled(DatabaseError firebaseError) {
 
             }
         });
@@ -187,19 +239,21 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
 
 
     public void delete() {
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        ref.child("users").child(ref.getAuth().getUid()).child("quests").child(mQuest.id).removeValue(new Firebase.CompletionListener() {
-            @Override
-            public void onComplete(FirebaseError firebaseError, Firebase firebase) {
-                if (firebaseError != null) {
-                    Log.d(TAG, firebaseError.toString());
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        ref.child("users").child(uid).child("quests").child(mQuest.id).removeValue()
+            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "delete successful");
+                        finish();
+                    }
+                    else {
+                        Log.d(TAG, "delete failed");
+                    }
                 }
-                else {
-                    Log.d(TAG, "delete successful " + firebase.getKey());
-                    finish();
-                }
-            }
-        });
+            });
     }
 
     public void beginEdit() {
@@ -272,9 +326,9 @@ public class QuestDetailsActivity extends BatchActivity implements DatePickerDia
         if (!dueDate.equals("") && !dueDate.equals("Not set")) mQuest.dueDate = dueDate;
 
         // Update Quest
-        Firebase ref = new Firebase(getResources().getString(R.string.firebase_url));
-        String uId = ref.getAuth().getUid();
-        ref.child("users").child(uId).child("quests").child(mQuest.id).setValue(mQuest);
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        ref.child("users").child(uid).child("quests").child(mQuest.id).setValue(mQuest);
 
         descriptionEdit.setVisibility(View.GONE);
         difficultySlider.setVisibility(View.GONE);

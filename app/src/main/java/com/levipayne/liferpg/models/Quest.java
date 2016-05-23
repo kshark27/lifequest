@@ -1,4 +1,4 @@
-package com.levipayne.liferpg;
+package com.levipayne.liferpg.models;
 
 import java.io.Serializable;
 
@@ -14,6 +14,7 @@ public class Quest implements Serializable {
     public int difficulty;
     public int reward;
     public int xp;
+
     public String dueDate;
 
     public Quest() {}

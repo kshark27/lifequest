@@ -1,9 +1,11 @@
-package com.levipayne.liferpg;
+package com.levipayne.liferpg.models;
+
+import java.io.Serializable;
 
 /**
  * Created by Levi on 5/6/2016.
  */
-public class PlayerStats {
+public class PlayerStats implements Serializable {
 
     public static final int START_MAX_HP = 5;
 
@@ -37,19 +39,19 @@ public class PlayerStats {
         return gold;
     }
 
-    public int getHp() {
-        return hp;
+    public int getMaxHp() {
+        return maxHp;
     }
 
-    public int getXp() {
-        return xp;
+    public int getHp() {
+        return hp;
     }
 
     public int getLevel() {
         return level;
     }
 
-    public int getMaxHp() {
-        return maxHp;
+    public int getXp() {
+        return xp;
     }
 }
