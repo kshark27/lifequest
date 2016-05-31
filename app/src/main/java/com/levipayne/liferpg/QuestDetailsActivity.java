@@ -86,6 +86,7 @@ public class QuestDetailsActivity extends PortraitActivity implements DatePicker
             @Override
             public void onClick(View v) {
                 ConfirmationDialogFragment dialogFragment = new ConfirmationDialogFragment();
+                dialogFragment.setEvent(new ConfirmDeleteEvent(dialogFragment));
                 dialogFragment.setMessage("Are you sure you want to delete this quest?");
                 dialogFragment.show(getSupportFragmentManager(), "DeleteConfirmation");
                 dialogFragment.addEventListener(QuestDetailsActivity.this, ConfirmDeleteEvent.TYPE);

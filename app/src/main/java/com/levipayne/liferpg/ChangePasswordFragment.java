@@ -49,44 +49,51 @@ public class ChangePasswordFragment extends Fragment {
         mChangeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity.showLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
+                if (checkForValidInput()) {
+                    MainActivity.showLoadingDialog((PortraitActivity) ChangePasswordFragment.this.getActivity());
 
-                String currPassword = mCurrPasswordEdit.getText().toString();
-                final String newPassword = mNewPasswordEdit.getText().toString();
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    String currPassword = mCurrPasswordEdit.getText().toString();
+                    final String newPassword = mNewPasswordEdit.getText().toString();
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-                FirebaseAuth.getInstance().signInWithEmailAndPassword(user.getEmail(), currPassword)
-                        .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    FirebaseAuth.getInstance().getCurrentUser().updatePassword(newPassword)
-                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<Void> task) {
-                                                    if (task.isSuccessful()) {
-                                                        Toast.makeText(getActivity(), "Password changed!", Toast.LENGTH_LONG).show();
-                                                        ((MainActivity)getActivity()).selectItem(0); // Go home
+                    FirebaseAuth.getInstance().signInWithEmailAndPassword(user.getEmail(), currPassword)
+                            .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if (task.isSuccessful()) {
+                                        FirebaseAuth.getInstance().getCurrentUser().updatePassword(newPassword)
+                                                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        if (task.isSuccessful()) {
+                                                            Toast.makeText(getActivity(), "Password changed!", Toast.LENGTH_LONG).show();
+                                                            ((MainActivity) getActivity()).selectItem(0); // Go home
+                                                        } else {
+                                                            Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
+
+                                                        }
+                                                        MainActivity.hideLoadingDialog((PortraitActivity) ChangePasswordFragment.this.getActivity());
                                                     }
-                                                    else {
-                                                        Toast.makeText(getActivity(), task.getException().toString(), Toast.LENGTH_LONG).show();
-
-                                                    }
-                                                    MainActivity.hideLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
-                                                }
-                                            });
+                                                });
+                                    } else {
+                                        Toast.makeText(getActivity(), "Current password is incorrect", Toast.LENGTH_LONG).show();
+                                        MainActivity.hideLoadingDialog((PortraitActivity) ChangePasswordFragment.this.getActivity());
+                                    }
                                 }
-                                else {
-                                    Toast.makeText(getActivity(), "Current password is incorrect", Toast.LENGTH_LONG).show();
-                                    MainActivity.hideLoadingDialog((PortraitActivity)ChangePasswordFragment.this.getActivity());
-                                }
-                            }
-                        });
+                            });
 
 
-
+                }
             }
         });
+    }
+
+    public boolean checkForValidInput() {
+        if (mNewPasswordEdit.getText().toString().equals("") || mCurrPasswordEdit.getText().toString().equals("")) {
+            Toast.makeText(this.getActivity(), "Please fill in both fields", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
     }
 
 }

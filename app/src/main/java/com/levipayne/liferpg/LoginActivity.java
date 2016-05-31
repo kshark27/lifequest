@@ -84,80 +84,90 @@ public class LoginActivity extends PortraitActivity {
         }
     }
 
+    public boolean checkForValidInput() {
+        if (mPasswordView.getText().toString().equals("") || mEmailView.getText().toString().equals("")) {
+            Toast.makeText(this, "Please enter both your password and email", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
+
     public void register() {
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+        if (checkForValidInput()) {
+            String email = mEmailView.getText().toString();
+            String password = mPasswordView.getText().toString();
 
-        MainActivity.showLoadingDialog(this);
+            MainActivity.showLoadingDialog(this);
 
-        mFirebaseAuth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
-                        MainActivity.hideLoadingDialog(LoginActivity.this);
+            mFirebaseAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(LoginActivity.this, "Successfully registered!", Toast.LENGTH_SHORT).show();
+                                MainActivity.hideLoadingDialog(LoginActivity.this);
 
-                        login(true);
-                    }
-                    else {
-                        Toast.makeText(LoginActivity.this, "Failed to register", Toast.LENGTH_SHORT).show();
-                        MainActivity.hideLoadingDialog(LoginActivity.this);
-                    }
-                }
-            });
+                                login(true);
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Failed to register", Toast.LENGTH_SHORT).show();
+                                MainActivity.hideLoadingDialog(LoginActivity.this);
+                            }
+                        }
+                    });
+        }
     }
 
     public void login(final boolean firstLogin) {
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+        if (checkForValidInput()) {
+            String email = mEmailView.getText().toString();
+            String password = mPasswordView.getText().toString();
 
-        MainActivity.showLoadingDialog(this);
+            MainActivity.showLoadingDialog(this);
 
-        mFirebaseAuth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
+            mFirebaseAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(LoginActivity.this, "Successfully logged in!", Toast.LENGTH_SHORT).show();
 
-                        if (firstLogin) {
-                            // Init player stats if first login
-                            FirebaseDatabase database = FirebaseDatabase.getInstance();
-                            PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
-                            database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("stats").setValue(stats);
+                                if (firstLogin) {
+                                    // Init player stats if first login
+                                    FirebaseDatabase database = FirebaseDatabase.getInstance();
+                                    PlayerStats stats = new PlayerStats(0, 1, 0, 5, 5);
+                                    database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("stats").setValue(stats);
 
-                            // Add a couple starter quests/rewards
-                            Quest quest1 = new Quest("Create your first quest", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
-                            Quest quest2 = new Quest("Create your first reward", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
-                            Reward reward1 = new Reward("Treat yourself to something nice!", 20);
+                                    // Add a couple starter quests/rewards
+                                    Quest quest1 = new Quest("Create your first quest", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                                    Quest quest2 = new Quest("Create your first reward", 1, 10, Quest.calculateXpFromDifficulty(1, 1));
+                                    Reward reward1 = new Reward("Treat yourself to something nice!", 20);
 
-                            DatabaseReference questRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("quests");
-                            DatabaseReference questRef1 = questRef.push();
-                            quest1.id = questRef1.getKey();
-                            questRef1.setValue(quest1);
-                            DatabaseReference questRef2 = questRef.push();
-                            quest2.id = questRef2.getKey();
-                            questRef2.setValue(quest2);
+                                    DatabaseReference questRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("quests");
+                                    DatabaseReference questRef1 = questRef.push();
+                                    quest1.id = questRef1.getKey();
+                                    questRef1.setValue(quest1);
+                                    DatabaseReference questRef2 = questRef.push();
+                                    quest2.id = questRef2.getKey();
+                                    questRef2.setValue(quest2);
 
-                            DatabaseReference rewardRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("rewards");
-                            DatabaseReference rewardRef1 = rewardRef.push();
-                            reward1.id = rewardRef1.getKey();
-                            rewardRef1.setValue(reward1);
+                                    DatabaseReference rewardRef = database.getReference().child("users").child(mFirebaseAuth.getCurrentUser().getUid()).child("rewards");
+                                    DatabaseReference rewardRef1 = rewardRef.push();
+                                    reward1.id = rewardRef1.getKey();
+                                    rewardRef1.setValue(reward1);
+                                }
+
+                                MainActivity.hideLoadingDialog(LoginActivity.this);
+
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                intent.putExtra("firstLogin", firstLogin);
+                                startActivity(intent);
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Log in failed", Toast.LENGTH_SHORT).show();
+                                MainActivity.hideLoadingDialog(LoginActivity.this);
+                            }
                         }
-
-                        MainActivity.hideLoadingDialog(LoginActivity.this);
-
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        intent.putExtra("firstLogin", firstLogin);
-                        startActivity(intent);
-                    }
-                    else {
-                        Toast.makeText(LoginActivity.this, "Log in failed", Toast.LENGTH_SHORT).show();
-                        MainActivity.hideLoadingDialog(LoginActivity.this);
-                    }
-                }
-            });
+                    });
+        }
     }
 }
 
