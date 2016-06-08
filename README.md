@@ -1,0 +1,1 @@
+LifeQuest is an Android app where you can complete self-defined quests in real life, level up, try not to die, and reap your own self-defined rewards. Now available on the Google Play Store.
