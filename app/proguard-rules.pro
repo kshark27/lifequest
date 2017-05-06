@@ -29,7 +29,7 @@
 -keepattributes *Annotation*
 -keepattributes Signature
 
--keepclassmembers class com.levipayne.liferpg.models.** {
+-keepclassmembers class com.levipayne.lifequest.models.** {
   *;
 }
 

@@ -5,7 +5,7 @@
     android:layout_width="fill_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.levipayne.liferpg.MainActivity"
+    tools:context="com.levipayne.lifequest.MainActivity"
     tools:showIn="@layout/activity_main"
     android:background="@color/main_background">
 

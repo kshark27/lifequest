@@ -3,11 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/list"
-    android:name="com.levipayne.liferpg.RewardFragment"
+    android:name="com.levipayne.lifequest.RewardFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginLeft="16dp"
     android:layout_marginRight="16dp"
     app:layoutManager="LinearLayoutManager"
-    tools:context="com.levipayne.liferpg.RewardFragment"
+    tools:context="com.levipayne.lifequest.RewardFragment"
     tools:listitem="@layout/fragment_reward" />

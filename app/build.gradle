@@ -5,18 +5,18 @@ android {
         release {
             keyAlias 'LifeQuestKey'
             keyPassword 'ldp1508'
-            storeFile file('C:/Users/Levi/.android/Keystores/keystore2.jks')
+            storeFile file('C:/Users/Levi/.android/keystores/lifequest.jks')
             storePassword 'ldp1508'
         }
     }
     compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    buildToolsVersion '25.0.0'
     defaultConfig {
-        applicationId "com.levipayne.liferpg"
+        applicationId "com.levipayne.lifequest"
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 104
-        versionName "1.04"
+        versionCode 105
+        versionName "1.05"
         multiDexEnabled true
     }
     buildTypes {
